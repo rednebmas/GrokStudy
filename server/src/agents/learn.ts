@@ -29,26 +29,25 @@ export const loadLearnAgent: AgentLoader = async (params?: AgentParams): Promise
   let instructions = baseInstructions;
   const topic = params?.topic;
 
-  // Load recent flashcards to help user continue from where they left off
-  const db = await getDb();
-  const query = topic ? { topic } : {};
-  const recentFlashcards = await db
-    .collection("flashcards")
-    .find(query)
-    .sort({ createdAt: -1 })
-    .limit(3)
-    .toArray();
-
   if (topic) {
     instructions += `\n\nThe user wants to continue learning about: ${topic}`;
-  }
 
-  if (recentFlashcards.length > 0) {
-    const recentSummary = recentFlashcards
-      .map((fc) => `- "${fc.question}"`)
-      .join("\n");
-    instructions += `\n\nTheir most recent flashcards${topic ? " on this topic" : ""} are:\n${recentSummary}\n\nUse these to help guide the conversation.`;
-    console.log(`📚 Learn agent loaded ${recentFlashcards.length} recent flashcards${topic ? ` for topic: ${topic}` : ""}`);
+    // Load recent flashcards from this topic to help continue from where they left off
+    const db = await getDb();
+    const recentFlashcards = await db
+      .collection("flashcards")
+      .find({ topic })
+      .sort({ createdAt: -1 })
+      .limit(3)
+      .toArray();
+
+    if (recentFlashcards.length > 0) {
+      const recentSummary = recentFlashcards
+        .map((fc) => `- "${fc.question}"`)
+        .join("\n");
+      instructions += `\n\nTheir most recent flashcards on this topic are:\n${recentSummary}\n\nUse these to help guide the conversation.`;
+      console.log(`📚 Learn agent loaded ${recentFlashcards.length} recent flashcards for topic: ${topic}`);
+    }
   }
 
   return {

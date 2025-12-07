@@ -5,7 +5,7 @@
 import type { AgentConfig, AgentName, AgentLoader, AgentParams, ToolDefinition } from "./types";
 import { loadStarterAgent } from "./starter";
 import { loadLearnAgent } from "./learn";
-import { loadStudyAgent } from "./study";
+import { loadReviewAgent } from "./review";
 
 /**
  * Tool that allows switching between agents
@@ -15,14 +15,14 @@ export const agentRouterTool: ToolDefinition = {
   function: {
     name: "switch_agent",
     description:
-      "Switch to a different agent mode. Use 'learn' when the user wants to explore topics and create flashcards. Use 'study' when the user wants to review their flashcards using spaced repetition.",
+      "Switch to a different agent mode. Use 'learn' when the user wants to explore topics and create flashcards. Use 'review' when the user wants to review their flashcards using spaced repetition.",
     parameters: {
       type: "object",
       properties: {
         agent: {
           type: "string",
           description: "The agent to switch to",
-          enum: ["starter", "learn", "study"],
+          enum: ["learn", "review"],
         },
         reason: {
           type: "string",
@@ -46,7 +46,7 @@ export const agentRouterTool: ToolDefinition = {
 const agentLoaders: Record<AgentName, AgentLoader> = {
   starter: loadStarterAgent,
   learn: loadLearnAgent,
-  study: loadStudyAgent,
+  review: loadReviewAgent,
 };
 
 /**
@@ -72,5 +72,5 @@ export async function getDefaultAgent(): Promise<AgentConfig> {
  * Check if an agent name is valid
  */
 export function isValidAgent(name: string): name is AgentName {
-  return name === "starter" || name === "learn" || name === "study";
+  return name === "starter" || name === "learn" || name === "review";
 }

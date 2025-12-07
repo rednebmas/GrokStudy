@@ -26,9 +26,9 @@ If the user asks you to create a flashcard, call the create_flashcard tool with 
 
 If there are no flashcards available, let the user know and suggest they learn something new first.`;
 
-export const loadStudyAgent: AgentLoader = async (): Promise<AgentConfig> => {
+export const loadReviewAgent: AgentLoader = async (): Promise<AgentConfig> => {
   return {
-    name: "study",
+    name: "review",
     instructions: baseInstructions,
     tools: [getRandomFlashcardTool, validateAnswerTool],
   };

@@ -4,7 +4,7 @@
 
 import type { ToolContext } from "../tools";
 
-export type AgentName = "starter" | "learn" | "study";
+export type AgentName = "starter" | "learn" | "review";
 
 export interface ToolParameter {
   type: string;

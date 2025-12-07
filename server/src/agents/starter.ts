@@ -13,7 +13,7 @@ Your role is to:
 3. Offer to continue learning from where they left off or start something new
 
 Based on the user's choice:
-- If they want to review/study flashcards, use switch_agent to switch to "study"
+- If they want to review/study flashcards, use switch_agent to switch to "review"
 - If they want to learn or explore topics, use switch_agent to switch to "learn"`;
 
 export const loadStarterAgent: AgentLoader = async (): Promise<AgentConfig> => {
@@ -24,24 +24,17 @@ export const loadStarterAgent: AgentLoader = async (): Promise<AgentConfig> => {
   // Get flashcard count for review prompt
   const flashcardCount = await db.collection("flashcards").countDocuments();
 
-  // Get three most recent flashcards to show where they left off
-  const recentFlashcards = await db
-    .collection("flashcards")
-    .find()
-    .sort({ createdAt: -1 })
-    .limit(3)
-    .toArray();
+  // Get list of topics the user has learned about
+  const topics = await db.collection("flashcards").distinct("topic");
 
   if (flashcardCount > 0) {
     instructions += `\n\nThe user has ${flashcardCount} flashcard${flashcardCount === 1 ? "" : "s"} available to review.`;
   }
 
-  if (recentFlashcards.length > 0) {
-    const recentSummary = recentFlashcards
-      .map((fc) => `- "${fc.question}" (${fc.topic})`)
-      .join("\n");
-    instructions += `\n\nTheir most recent flashcards are:\n${recentSummary}\n\nMention these to help them pick up where they left off.`;
-    console.log(`📚 Starter agent loaded ${recentFlashcards.length} recent flashcards`);
+  if (topics.length > 0) {
+    const topicsList = topics.join(", ");
+    instructions += `\n\nThe user has previously learned about these topics: ${topicsList}\n\nMention these to help them pick up where they left off, or they can start something new.`;
+    console.log(`📚 Starter agent loaded ${topics.length} topics: ${topicsList}`);
   }
 
   return {

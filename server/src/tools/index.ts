@@ -95,7 +95,8 @@ export const getRandomFlashcardTool: ToolDefinition = {
     const db = await getDb();
     const flashcards = await db
       .collection("flashcards")
-      .aggregate([{ $match: { sessionId: context.sessionId } }, { $sample: { size: 1 } }])
+      // .aggregate([{ $match: { sessionId: context.sessionId } }, { $sample: { size: 1 } }])
+      .aggregate([{ $sample: { size: 1 } }])
       .toArray();
 
     if (flashcards.length === 0) {

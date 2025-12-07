@@ -8,6 +8,7 @@
 import "dotenv/config";
 import express from "express";
 import rateLimit from "express-rate-limit";
+import { ObjectId } from "mongodb";
 import { getDb } from "./db";
 import { getAgentConfig, getDefaultAgent, isValidAgent } from "./agents";
 import type { AgentName } from "./agents";
@@ -25,7 +26,7 @@ app.use((req, res, next) => {
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin);
   }
-  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE",);
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.header("Access-Control-Allow-Credentials", "true");
 
@@ -187,6 +188,57 @@ app.post("/tools/execute", async (req, res) => {
     console.error("❌ Error executing tool:", error);
     res.status(500).json({
       error: "Tool execution failed",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+// ========================================
+// Flashcard Management Endpoints
+// ========================================
+
+// Get all flashcards
+app.get("/flashcards", async (req, res) => {
+  try {
+    const db = await getDb();
+    const flashcards = await db
+      .collection("flashcards")
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    res.json({ flashcards });
+  } catch (error) {
+    console.error("❌ Error fetching flashcards:", error);
+    res.status(500).json({
+      error: "Failed to fetch flashcards",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+// Delete a flashcard
+app.delete("/flashcards/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid flashcard ID" });
+    }
+
+    const db = await getDb();
+    const result = await db.collection("flashcards").deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Flashcard not found" });
+    }
+
+    console.log(`🗑️ Deleted flashcard: ${id}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("❌ Error deleting flashcard:", error);
+    res.status(500).json({
+      error: "Failed to delete flashcard",
       details: error instanceof Error ? error.message : "Unknown error",
     });
   }

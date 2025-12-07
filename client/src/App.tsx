@@ -7,11 +7,15 @@ import { TopBar } from "./components/TopBar";
 import { ControlPanel } from "./components/ControlPanel";
 import { DebugConsole } from "./components/DebugConsole";
 import { TranscriptPanel } from "./components/TranscriptPanel";
+import { FlashcardsPage } from "./components/FlashcardsPage";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { useAudioStream } from "./hooks/useAudioStream";
 import type { Message, TranscriptEntry } from "./types/messages";
 
+type Page = "main" | "flashcards";
+
 function App() {
+  const [page, setPage] = useState<Page>("main");
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const currentTranscriptRef = useRef<{ role: "user" | "assistant"; content: string } | null>(null);
   const sendMessageRef = useRef<((message: Message) => void) | null>(null);
@@ -199,6 +203,10 @@ function App() {
     }
   }, [pendingAgentSwitch]);
 
+  if (page === "flashcards") {
+    return <FlashcardsPage onBack={() => setPage("main")} />;
+  }
+
   return (
     <div
       style={{
@@ -210,8 +218,28 @@ function App() {
         overflow: "hidden",
       }}
     >
-      <div style={{ padding: "1rem 1rem 0 1rem" }}>
+      <div
+        style={{
+          padding: "1rem 1rem 0 1rem",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <TopBar isConnected={isConnected} provider={provider} />
+        <button
+          onClick={() => setPage("flashcards")}
+          style={{
+            padding: "0.5rem 1rem",
+            backgroundColor: "#333",
+            color: "#fff",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          View Flashcards
+        </button>
       </div>
 
       <div

@@ -307,6 +307,7 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
                 ) {
                   const newAgent = result.agent as string;
                   console.log(`🔄 [Client] Agent switch requested to: ${newAgent}`);
+                  ws.close(); // Close immediately to stop receiving messages
                   setPendingAgentSwitch(newAgent);
                   return;
                 }

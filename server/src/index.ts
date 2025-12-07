@@ -8,6 +8,9 @@
 import "dotenv/config";
 import express from "express";
 import rateLimit from "express-rate-limit";
+import { getDb } from "./db";
+import { getAgentConfig, getDefaultAgent, isValidAgent } from "./agents";
+import type { AgentName } from "./agents";
 
 const app = express();
 
@@ -51,8 +54,17 @@ app.use(limiter);
 // Configuration
 const XAI_API_KEY = process.env.XAI_API_KEY || "";
 const PORT = process.env.PORT || "8000";
-const INSTRUCTIONS = process.env.INSTRUCTIONS || "You are a helpful voice assistant. You are speaking to a user in real-time over audio. Keep your responses conversational and concise since they will be spoken aloud.";
 const VOICE = process.env.VOICE || "ara";
+
+// Initialize DB connection
+(async () => {
+  try {
+    await getDb();
+    console.log("MongoDB connected");
+  } catch (err) {
+    console.error("MongoDB connection failed", err);
+  }
+})();
 
 // ========================================
 // REST API Endpoints
@@ -82,7 +94,13 @@ app.get("/health", (req, res) => {
 // Ephemeral token endpoint for direct client connection to XAI API
 app.post("/session", sessionLimiter, async (req, res) => {
   try {
-    console.log("📝 Creating ephemeral session...");
+    // Get agent from query param, default to learn
+    const agentName = req.query.agent as string | undefined;
+    const agent = agentName && isValidAgent(agentName)
+      ? getAgentConfig(agentName)
+      : getDefaultAgent();
+
+    console.log(`📝 Creating ephemeral session for agent: ${agent.name}...`);
 
     const SESSION_REQUEST_URL = "https://api.x.ai/v1/realtime/client_secrets";
     const response = await fetch(SESSION_REQUEST_URL, {
@@ -108,20 +126,65 @@ app.post("/session", sessionLimiter, async (req, res) => {
     const data = await response.json() as { value: string; expires_at: number };
     console.log("✅ Ephemeral session created");
 
-    // Transform to match client's expected format (OpenAI-compatible)
+    // Transform to match client's expected format
     res.json({
       client_secret: {
         value: data.value,
         expires_at: data.expires_at,
       },
       voice: VOICE,
-      instructions: INSTRUCTIONS,
+      instructions: agent.instructions,
+      tools: agent.tools,
+      agent: agent.name,
     });
   } catch (error) {
     console.error("❌ Error creating session:", error);
     res.status(500).json({ 
       error: "Failed to create session",
       details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Tool execution endpoint - client relays tool calls here
+app.post("/tools/execute", async (req, res) => {
+  try {
+    const { toolName, args, sessionId, agent: agentParam } = req.body as {
+      toolName: string;
+      args: Record<string, unknown>;
+      sessionId: string;
+      agent?: string;
+    };
+
+    if (!toolName || !sessionId) {
+      return res.status(400).json({ error: "Missing toolName or sessionId" });
+    }
+
+    console.log(`[${sessionId}] 🛠️  Executing tool: ${toolName}`);
+
+    // Get agent config to find the tool
+    const agent = agentParam && isValidAgent(agentParam)
+      ? getAgentConfig(agentParam)
+      : getDefaultAgent();
+
+    const tool = agent.tools.find(
+      (t) => t.type === "function" && t.function.name === toolName
+    );
+
+    if (!tool || tool.type !== "function") {
+      console.error(`[${sessionId}] ❌ Unknown tool: ${toolName}`);
+      return res.status(404).json({ error: `Tool not found: ${toolName}` });
+    }
+
+    const result = await tool.execute(args, { sessionId });
+    console.log(`[${sessionId}] ✅ Tool result:`, result);
+
+    res.json({ result });
+  } catch (error) {
+    console.error("❌ Error executing tool:", error);
+    res.status(500).json({
+      error: "Tool execution failed",
+      details: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -137,7 +200,6 @@ app.listen(PORT, () => {
   console.log(`🔑 API Key: ${XAI_API_KEY ? "Configured" : "❌ Missing"}`);
   console.log(`🌐 Port: ${PORT}`);
   console.log(`🎙️  Voice: ${VOICE}`);
-  console.log(`📝 Instructions: ${INSTRUCTIONS.substring(0, 50)}...`);
   console.log(`🔒 CORS Origins: ${ALLOWED_ORIGINS.join(", ")}`);
   console.log("=".repeat(60));
   console.log(`Server running at http://localhost:${PORT}`);

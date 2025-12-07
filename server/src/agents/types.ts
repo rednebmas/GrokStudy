@@ -35,3 +35,8 @@ export interface AgentConfig {
   instructions: string;
   tools: ToolDefinition[];
 }
+
+/**
+ * Function that loads an agent config, optionally with async data
+ */
+export type AgentLoader = () => Promise<AgentConfig>;

@@ -2,12 +2,10 @@
  * Study Agent - quizzes users on their flashcards using spaced repetition
  */
 
-import type { AgentConfig } from "./types";
+import type { AgentConfig, AgentLoader } from "./types";
 import { getRandomFlashcardTool, validateAnswerTool } from "../tools";
 
-export const studyAgent: AgentConfig = {
-  name: "study",
-  instructions: `You are a study coach that helps users review their flashcards using spaced repetition.
+const baseInstructions = `You are a study coach that helps users review their flashcards using spaced repetition.
 
 Your role is to:
 1. Use get_random_flashcard to get a flashcard to quiz the user on
@@ -26,6 +24,12 @@ If the user says they want to learn something new or explore a topic, use the sw
 
 If the user asks you to create a flashcard, call the create_flashcard tool with a question and answer based on your responses.
 
-If there are no flashcards available, let the user know and suggest they learn something new first.`,
-  tools: [getRandomFlashcardTool, validateAnswerTool],
+If there are no flashcards available, let the user know and suggest they learn something new first.`;
+
+export const loadStudyAgent: AgentLoader = async (): Promise<AgentConfig> => {
+  return {
+    name: "study",
+    instructions: baseInstructions,
+    tools: [getRandomFlashcardTool, validateAnswerTool],
+  };
 };

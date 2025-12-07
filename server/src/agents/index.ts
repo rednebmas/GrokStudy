@@ -3,4 +3,4 @@
  */
 
 export { getAgentConfig, getDefaultAgent, isValidAgent } from "./router";
-export type { AgentConfig, AgentName, ToolDefinition } from "./types";
+export type { AgentConfig, AgentName, AgentLoader, ToolDefinition } from "./types";

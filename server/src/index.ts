@@ -99,8 +99,9 @@ app.post("/session", sessionLimiter, async (req, res) => {
   try {
     // Get agent from query param, default to learn
     const agentName = req.query.agent as string | undefined;
-    const agent =
-      agentName && isValidAgent(agentName) ? getAgentConfig(agentName) : getDefaultAgent();
+    const agent = await (agentName && isValidAgent(agentName)
+      ? getAgentConfig(agentName)
+      : getDefaultAgent());
 
     console.log(`📝 Creating ephemeral session for agent: ${agent.name}...`);
 
@@ -170,8 +171,9 @@ app.post("/tools/execute", async (req, res) => {
     console.log(`[${sessionId}] 🛠️  Executing tool: ${toolName}`);
 
     // Get agent config to find the tool
-    const agent =
-      agentParam && isValidAgent(agentParam) ? getAgentConfig(agentParam) : getDefaultAgent();
+    const agent = await (agentParam && isValidAgent(agentParam)
+      ? getAgentConfig(agentParam)
+      : getDefaultAgent());
 
     const tool = agent.tools.find((t) => t.type === "function" && t.function.name === toolName);
 

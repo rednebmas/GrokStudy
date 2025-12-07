@@ -12,6 +12,7 @@ import type WebSocket from "ws";
 import { SessionManager } from "./session-manager";
 import { RTCPeerManager } from "./rtc-peer";
 import type { SignalingMessage } from "./types";
+import { getDefaultAgent } from "./agents";
 
 // Helper to get timestamp with milliseconds
 const getTimestamp = () => {
@@ -54,8 +55,10 @@ app.use(express.json());
 const XAI_API_KEY = process.env.XAI_API_KEY || "";
 const API_URL = process.env.API_URL || "wss://api.x.ai/v1/realtime";
 const PORT = process.env.PORT || "8000";
-const INSTRUCTIONS = process.env.INSTRUCTIONS || "You are a helpful voice assistant. You are speaking to a user in real-time over audio. Keep your responses conversational and concise since they will be spoken aloud.";
 const VOICE = process.env.VOICE || "ara";
+
+// Get default agent configuration
+const defaultAgent = getDefaultAgent();
 
 // Initialize session manager
 const sessionManager = new SessionManager();
@@ -129,7 +132,8 @@ app.post("/session", async (req, res) => {
     res.json({
       ...data,
       voice: VOICE,
-      instructions: INSTRUCTIONS,
+      instructions: defaultAgent.instructions,
+      agentName: defaultAgent.name,
     });
   } catch (error) {
     console.error("❌ Error creating session:", error);
@@ -249,7 +253,8 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
     xaiApiKey: XAI_API_KEY,
     xaiApiUrl: API_URL,
     voice: VOICE,
-    instructions: INSTRUCTIONS,
+    instructions: defaultAgent.instructions,
+    tools: defaultAgent.tools,
     sampleRate: session.sample_rate,
   });
 
@@ -369,7 +374,9 @@ app.listen(PORT, () => {
   console.log(`🔑 API Key: ${XAI_API_KEY ? "Configured" : "❌ Missing"}`);
   console.log(`🌐 Port: ${PORT}`);
   console.log(`🎙️  Voice: ${VOICE}`);
-  console.log(`📝 Instructions: ${INSTRUCTIONS.substring(0, 50)}...`);
+  console.log(`🤖 Agent: ${defaultAgent.name}`);
+  console.log(`📝 Instructions: ${defaultAgent.instructions.substring(0, 50)}...`);
+  console.log(`🛠️  Tools: ${defaultAgent.tools.map(t => t.function.name).join(", ")}`);
   console.log(`🔒 CORS Origins: ${ALLOWED_ORIGINS.join(", ")}`);
   console.log("=".repeat(60));
   console.log(`Server running at http://localhost:${PORT}`);

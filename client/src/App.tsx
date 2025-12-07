@@ -184,7 +184,6 @@ function App() {
     stopCapture();
     stopPlayback(); // Stop any playing audio
     disconnect();
-    setTranscript([]);
     currentTranscriptRef.current = null;
   };
 
@@ -194,7 +193,9 @@ function App() {
       const newAgent = pendingAgentSwitch;
       clearPendingAgentSwitch();
       handleStop();
-      handleStart(newAgent);
+      setTimeout(() => {
+        handleStart(newAgent);
+      }, 1000);
     }
   }, [pendingAgentSwitch]);
 

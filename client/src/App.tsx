@@ -2,7 +2,7 @@
  * Main App component
  */
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { TopBar } from "./components/TopBar";
 import { ControlPanel } from "./components/ControlPanel";
 import { DebugConsole } from "./components/DebugConsole";
@@ -139,14 +139,23 @@ function App() {
     [playAudio, stopPlayback],
   );
 
-  const { isConnected, connect, disconnect, sendMessage, debugLogs, clearLogs, provider } =
-    useWebSocket(handleMessage);
+  const {
+    isConnected,
+    connect,
+    disconnect,
+    sendMessage,
+    debugLogs,
+    clearLogs,
+    provider,
+    pendingAgentSwitch,
+    clearPendingAgentSwitch,
+  } = useWebSocket(handleMessage);
 
   // Store sendMessage in ref to avoid circular dependency
   sendMessageRef.current = sendMessage;
 
   // Start conversation
-  const handleStart = async () => {
+  const handleStart = async (agent?: string) => {
     try {
       // Clear logs and transcript
       clearLogs();
@@ -163,7 +172,7 @@ function App() {
 
       // Connect WebSocket with the detected sample rate
       console.log(`Using detected sample rate: ${detectedSampleRate}Hz`);
-      await connect(detectedSampleRate);
+      await connect(detectedSampleRate, agent);
     } catch (error) {
       console.error("Failed to start:", error);
       alert(`Failed to start: ${error}`);
@@ -178,6 +187,16 @@ function App() {
     setTranscript([]);
     currentTranscriptRef.current = null;
   };
+
+  // Handle agent switch - stop and restart with new agent
+  useEffect(() => {
+    if (pendingAgentSwitch) {
+      const newAgent = pendingAgentSwitch;
+      clearPendingAgentSwitch();
+      handleStop();
+      handleStart(newAgent);
+    }
+  }, [pendingAgentSwitch]);
 
   return (
     <div

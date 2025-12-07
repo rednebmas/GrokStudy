@@ -11,12 +11,14 @@ const XAI_REALTIME_URL = "wss://api.x.ai/v1/realtime";
 
 interface UseWebSocketReturn {
   isConnected: boolean;
-  connect: (sampleRate: number) => Promise<void>;
+  connect: (sampleRate: number, agent?: string) => Promise<void>;
   disconnect: () => void;
   sendMessage: (message: Message) => void;
   debugLogs: DebugLogEntry[];
   clearLogs: () => void;
   provider: string | null;
+  pendingAgentSwitch: string | null;
+  clearPendingAgentSwitch: () => void;
 }
 
 interface SessionResponse {
@@ -70,6 +72,7 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
   const [isConnected, setIsConnected] = useState(false);
   const [debugLogs, setDebugLogs] = useState<DebugLogEntry[]>([]);
   const [provider, setProvider] = useState<string | null>(null);
+  const [pendingAgentSwitch, setPendingAgentSwitch] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const sessionConfigRef = useRef<{
     voice: string;
@@ -183,12 +186,13 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
   );
 
   const connect = useCallback(
-    async (sampleRate: number) => {
+    async (sampleRate: number, agent?: string) => {
       try {
-        console.log(`📝 Getting ephemeral token...`);
+        const agentParam = agent ? `?agent=${agent}` : "";
+        console.log(`📝 Getting ephemeral token${agent ? ` for agent: ${agent}` : ""}...`);
 
         // Get ephemeral token from backend
-        const response = await fetch(`${API_BASE_URL}/session`, {
+        const response = await fetch(`${API_BASE_URL}/session${agentParam}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -292,6 +296,21 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
                 // Execute tool on server
                 const result = await executeToolOnServer(toolMessage.name, args, sessionId, agent);
 
+                // Handle agent switching - disconnect and reconnect with new agent
+                if (
+                  toolMessage.name === "switch_agent" &&
+                  result &&
+                  typeof result === "object" &&
+                  "switched" in result &&
+                  result.switched === true &&
+                  "agent" in result
+                ) {
+                  const newAgent = result.agent as string;
+                  console.log(`🔄 [Client] Agent switch requested to: ${newAgent}`);
+                  setPendingAgentSwitch(newAgent);
+                  return;
+                }
+
                 // Send result back to XAI
                 const functionOutput = {
                   type: "conversation.item.create",
@@ -390,6 +409,10 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
     };
   }, []);
 
+  const clearPendingAgentSwitch = useCallback(() => {
+    setPendingAgentSwitch(null);
+  }, []);
+
   return {
     isConnected,
     connect,
@@ -398,5 +421,7 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
     debugLogs,
     clearLogs,
     provider,
+    pendingAgentSwitch,
+    clearPendingAgentSwitch,
   };
 }

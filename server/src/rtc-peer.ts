@@ -9,6 +9,7 @@ import {
   RTCIceCandidate,
 } from "werift";
 import type { WebRTCStats } from "./types";
+import type { ToolDefinition } from "./agents/types";
 import { XAIClient } from "./xai-client";
 import { AudioProcessor } from "./audio-processor";
 
@@ -22,6 +23,7 @@ export interface RTCPeerConfig {
   xaiApiUrl: string;
   voice: string;
   instructions: string;
+  tools: ToolDefinition[];
   sampleRate: number;
 }
 
@@ -50,6 +52,7 @@ export class RTCPeerManager {
       apiUrl: config.xaiApiUrl,
       voice: config.voice,
       instructions: config.instructions,
+      tools: config.tools,
       sessionId: config.sessionId,
       sampleRate: config.sampleRate,
     });

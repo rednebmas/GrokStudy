@@ -5,6 +5,7 @@
 
 import WebSocket from "ws";
 import type { XAIMessage } from "./types";
+import type { ToolDefinition } from "./agents/types";
 
 export interface XAIClientConfig {
   apiKey: string;
@@ -13,6 +14,7 @@ export interface XAIClientConfig {
   instructions: string;
   sessionId: string;
   sampleRate: number;
+  tools: ToolDefinition[];
 }
 
 export type XAIMessageHandler = (message: XAIMessage) => void;
@@ -153,9 +155,10 @@ export class XAIClient {
    * Configure the XAI session
    */
   private configureSession(): void {
-    const { sessionId, voice, instructions, sampleRate } = this.config;
+    const { sessionId, voice, instructions, sampleRate, tools } = this.config;
 
     console.log(`[${sessionId}] ⚙️  Configuring XAI session with ${sampleRate}Hz audio...`);
+    console.log(`[${sessionId}] 🛠️  Tools: ${tools.map(t => t.function.name).join(", ")}`);
 
     // Send session configuration with dynamic sample rate
     const sessionConfig = {
@@ -163,6 +166,7 @@ export class XAIClient {
       session: {
         instructions,
         voice,
+        tools,
         audio: {
           input: {
             format: {

@@ -26,7 +26,44 @@ interface SessionResponse {
   };
   voice: string;
   instructions: string;
+  tools: unknown[];
+  agent: string;
   error?: string;
+}
+
+/**
+ * Execute a tool call by sending it to the server
+ */
+async function executeToolOnServer(
+  toolName: string,
+  args: Record<string, unknown>,
+  sessionId: string,
+  agent: string
+): Promise<Record<string, unknown>> {
+  console.log(`🛠️ [Client] Calling server to execute tool: ${toolName}`, args);
+
+  const response = await fetch(`${API_BASE_URL}/tools/execute`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      toolName,
+      args,
+      sessionId,
+      agent,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error(`❌ [Client] Tool execution failed:`, error);
+    throw new Error(`Tool execution failed: ${error}`);
+  }
+
+  const data = await response.json();
+  console.log(`✅ [Client] Tool result received:`, data.result);
+  return data.result;
 }
 
 export function useWebSocket(
@@ -36,7 +73,8 @@ export function useWebSocket(
   const [debugLogs, setDebugLogs] = useState<DebugLogEntry[]>([]);
   const [provider, setProvider] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const sessionConfigRef = useRef<{ voice: string; instructions: string; sampleRate: number } | null>(null);
+  const sessionConfigRef = useRef<{ voice: string; instructions: string; tools: unknown[]; sampleRate: number } | null>(null);
+  const sessionInfoRef = useRef<{ sessionId: string; agent: string } | null>(null);
   const isSessionConfigured = useRef(false);
 
   const addDebugLog = useCallback((direction: "SEND" | "RECV", message: Message) => {
@@ -68,15 +106,17 @@ export function useWebSocket(
   const configureSession = useCallback((ws: WebSocket) => {
     if (!sessionConfigRef.current) return;
 
-    const { voice, instructions, sampleRate } = sessionConfigRef.current;
+    const { voice, instructions, tools, sampleRate } = sessionConfigRef.current;
 
     console.log(`⚙️ Configuring session with ${sampleRate}Hz audio...`);
+    console.log(`🛠️ Including ${tools?.length || 0} tools in session config`);
 
     const sessionConfig = {
       type: "session.update",
       session: {
         instructions,
         voice,
+        tools,
         audio: {
           input: {
             format: {
@@ -162,8 +202,19 @@ export function useWebSocket(
       sessionConfigRef.current = {
         voice: data.voice,
         instructions: data.instructions,
+        tools: data.tools,
         sampleRate,
       };
+      console.log(`🛠️ Tools configured:`, data.tools?.length || 0, "tools");
+
+      // Generate a session ID and store agent info
+      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      sessionInfoRef.current = {
+        sessionId,
+        agent: data.agent || "learn",
+      };
+      console.log(`📋 Session ID: ${sessionId}, Agent: ${sessionInfoRef.current.agent}`);
+
       isSessionConfigured.current = false;
 
       // Get provider info from health check
@@ -190,7 +241,7 @@ export function useWebSocket(
         setIsConnected(true);
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = async (event) => {
         try {
           const message: Message = JSON.parse(event.data);
           addDebugLog("RECV", message);
@@ -205,6 +256,57 @@ export function useWebSocket(
           if (message.type === "session.updated" && !isSessionConfigured.current) {
             isSessionConfigured.current = true;
             sendInitialGreeting(ws);
+          }
+
+          // Handle tool calls - relay to server and send result back to XAI
+          if (message.type === "response.function_call_arguments.done") {
+            console.log('function call!!!', message);
+            
+            const toolMessage = message as Message & {
+              name: string;
+              call_id: string;
+              arguments: string;
+            };
+
+            console.log(`🛠️ [Client] Tool call received: ${toolMessage.name}`);
+
+            try {
+              const args = JSON.parse(toolMessage.arguments || "{}");
+              const { sessionId, agent } = sessionInfoRef.current || { sessionId: "unknown", agent: "learn" };
+
+              // Execute tool on server
+              const result = await executeToolOnServer(toolMessage.name, args, sessionId, agent);
+
+              // Send result back to XAI
+              const functionOutput = {
+                type: "conversation.item.create",
+                item: {
+                  type: "function_call_output",
+                  call_id: toolMessage.call_id,
+                  output: JSON.stringify(result),
+                },
+              };
+              ws.send(JSON.stringify(functionOutput));
+              addDebugLog("SEND", functionOutput as Message);
+              console.log(`📤 [Client] Sent tool result to XAI`);
+
+              // Trigger response from XAI
+              ws.send(JSON.stringify({ type: "response.create" }));
+            } catch (error) {
+              console.error(`❌ [Client] Tool execution error:`, error);
+
+              // Send error result back to XAI
+              const errorOutput = {
+                type: "conversation.item.create",
+                item: {
+                  type: "function_call_output",
+                  call_id: toolMessage.call_id,
+                  output: JSON.stringify({ error: String(error) }),
+                },
+              };
+              ws.send(JSON.stringify(errorOutput));
+              ws.send(JSON.stringify({ type: "response.create" }));
+            }
           }
 
           onMessage(message);

@@ -1,0 +1,54 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+jobs:
+    lint-and-build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.head_ref }}
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+                  cache-dependency-path: |
+                      server/package-lock.json
+                      client/package-lock.json
+
+            - name: Install server dependencies
+              working-directory: server
+              run: npm ci
+
+            - name: Install client dependencies
+              working-directory: client
+              run: npm ci
+
+            - name: Format server
+              working-directory: server
+              run: npx prettier --write "src/**/*.ts"
+
+            - name: Format client
+              working-directory: client
+              run: npx prettier --write "src/**/*.{ts,tsx}"
+
+            - name: Commit formatting changes
+              uses: stefanzweifel/git-auto-commit-action@v5
+              with:
+                  commit_message: 'style: format code with prettier'
+
+            - name: Build server
+              working-directory: server
+              run: npm run build
+
+            - name: Build client
+              working-directory: client
+              run: npm run build

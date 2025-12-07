@@ -2,15 +2,23 @@
  * DebugConsole component - Display WebSocket messages (excluding audio)
  */
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { DebugLogEntry } from "../types/messages";
 
 interface DebugConsoleProps {
   logs: DebugLogEntry[];
+  onCollapsedChange?: (collapsed: boolean) => void;
 }
 
-export const DebugConsole: React.FC<DebugConsoleProps> = ({ logs }) => {
+export const DebugConsole: React.FC<DebugConsoleProps> = ({ logs, onCollapsedChange }) => {
   const consoleRef = useRef<HTMLDivElement>(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const handleToggle = () => {
+    const newCollapsed = !isCollapsed;
+    setIsCollapsed(newCollapsed);
+    onCollapsedChange?.(newCollapsed);
+  };
 
   // Auto-scroll to bottom when new logs arrive
   useEffect(() => {
@@ -39,57 +47,77 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({ logs }) => {
         color: "#fff",
         padding: "1rem",
         display: "flex",
-        flexDirection: "column",
+        flexDirection: isCollapsed ? "row" : "column",
+        alignItems: isCollapsed ? "center" : "stretch",
         height: "100%",
+        width: isCollapsed ? "auto" : "100%",
       }}
     >
-      <h2 style={{ margin: "0 0 1rem 0", fontSize: "1.2rem" }}>Debug Console</h2>
-
-      <div
-        ref={consoleRef}
+      <h2
         style={{
-          flex: 1,
-          overflow: "auto",
-          fontFamily: "monospace",
-          fontSize: "0.85rem",
-          lineHeight: "1.4",
-          backgroundColor: "#000",
-          border: "1px solid #525252ff",
-          borderRadius: "8px",
-          padding: "0.5rem",
+          margin: 0,
+          fontSize: "1.2rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          writingMode: isCollapsed ? "vertical-rl" : "horizontal-tb",
         }}
+        onClick={handleToggle}
       >
-        {logs.length === 0 ? (
-          <div style={{ color: "#666" }}>No messages yet...</div>
-        ) : (
-          logs.map((log, index) => (
-            <div
-              key={index}
-              style={{
-                marginBottom: "0.5rem",
-                paddingBottom: "0.5rem",
-                borderBottom: "1px solid #333",
-              }}
-            >
-              <div style={{ color: log.direction === "SEND" ? "#ffff00" : "#00ffff" }}>
-                [{formatTime(log.timestamp)}] {log.direction} → {log.type}
-              </div>
+        <span style={{ fontSize: "0.8rem" }}>{isCollapsed ? "◀" : "▶"}</span>
+        Debug Console
+      </h2>
+
+      {!isCollapsed && (
+        <div
+          ref={consoleRef}
+          style={{
+            flex: 1,
+            overflow: "auto",
+            fontFamily: "monospace",
+            fontSize: "0.85rem",
+            lineHeight: "1.4",
+            backgroundColor: "#000",
+            border: "1px solid #525252ff",
+            borderRadius: "8px",
+            padding: "0.5rem",
+            marginTop: "1rem",
+          }}
+        >
+          {logs.length === 0 ? (
+            <div style={{ color: "#666" }}>No messages yet...</div>
+          ) : (
+            logs.map((log, index) => (
               <div
+                key={index}
                 style={{
-                  marginLeft: "1rem",
-                  marginTop: "0.25rem",
-                  color: "#aaa",
-                  fontSize: "0.8rem",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-all",
+                  marginBottom: "0.5rem",
+                  paddingBottom: "0.5rem",
+                  borderBottom: "1px solid #333",
                 }}
               >
-                {JSON.stringify(log.message, null, 2)}
+                <div style={{ color: log.direction === "SEND" ? "#ffff00" : "#00ffff" }}>
+                  [{formatTime(log.timestamp)}] {log.direction} → {log.type}
+                </div>
+                <div
+                  style={{
+                    marginLeft: "1rem",
+                    marginTop: "0.25rem",
+                    color: "#aaa",
+                    fontSize: "0.8rem",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-all",
+                  }}
+                >
+                  {JSON.stringify(log.message, null, 2)}
+                </div>
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 };

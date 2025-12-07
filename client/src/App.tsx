@@ -17,6 +17,7 @@ type Page = "main" | "flashcards";
 function App() {
   const [page, setPage] = useState<Page>("main");
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const [debugCollapsed, setDebugCollapsed] = useState(false);
   const currentTranscriptRef = useRef<{ role: "user" | "assistant"; content: string } | null>(null);
   const sendMessageRef = useRef<((message: Message) => void) | null>(null);
 
@@ -260,7 +261,7 @@ function App() {
         style={{
           flex: 1,
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: debugCollapsed ? "1fr auto" : "1fr 1fr",
           gridTemplateRows: "auto 1fr",
           gap: "1rem",
           padding: "1rem",
@@ -286,7 +287,7 @@ function App() {
 
         {/* Debug Console - right column */}
         <div style={{ minHeight: 0, overflow: "hidden" }}>
-          <DebugConsole logs={debugLogs} />
+          <DebugConsole logs={debugLogs} onCollapsedChange={setDebugCollapsed} />
         </div>
       </div>
     </div>

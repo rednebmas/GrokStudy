@@ -142,4 +142,3 @@ export function WebRTCStatsPanel({ stats, connectionQuality }: WebRTCStatsPanelP
     </div>
   );
 }
-

@@ -42,7 +42,7 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({ transcript }) 
       }}
     >
       <h2 style={{ margin: "0 0 1rem 0", fontSize: "1.2rem" }}>Transcript</h2>
-      
+
       <div
         ref={panelRef}
         style={{
@@ -93,4 +93,3 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({ transcript }) 
     </div>
   );
 };
-

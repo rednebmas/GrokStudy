@@ -16,7 +16,7 @@ export interface ToolContext {
  */
 export type ToolHandler<T = Record<string, unknown>> = (
   args: T,
-  context: ToolContext
+  context: ToolContext,
 ) => Promise<void>;
 
 /**

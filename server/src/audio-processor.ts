@@ -1,6 +1,6 @@
 /**
  * Audio format conversion utilities
- * 
+ *
  * Note: This implementation uses a hybrid approach where PCM16 audio
  * is sent via DataChannel instead of native WebRTC audio tracks.
  * This avoids complex Opus codec dependencies while maintaining quality.

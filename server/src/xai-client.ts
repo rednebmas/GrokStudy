@@ -71,7 +71,7 @@ export class XAIClient {
 
         this.ws.on("close", (code, reason) => {
           console.log(
-            `[${sessionId}] ❌ XAI WebSocket closed - Code: ${code}, Reason: ${reason.toString() || "No reason"}`
+            `[${sessionId}] ❌ XAI WebSocket closed - Code: ${code}, Reason: ${reason.toString() || "No reason"}`,
           );
           if (this.closeHandler) {
             this.closeHandler(code, reason.toString());
@@ -102,10 +102,15 @@ export class XAIClient {
 
         // Log full details for session.updated and error events
         if (eventType === "session.updated") {
-          console.log(`[${sessionId}] 🔧 DEBUG: session.updated details:`, JSON.stringify(message, null, 2));
+          console.log(
+            `[${sessionId}] 🔧 DEBUG: session.updated details:`,
+            JSON.stringify(message, null, 2),
+          );
 
           // After session.updated is confirmed, send initial greeting
-          console.log(`[${sessionId}] ✅ Session configuration confirmed, sending initial greeting...`);
+          console.log(
+            `[${sessionId}] ✅ Session configuration confirmed, sending initial greeting...`,
+          );
           this.sendMessage({ type: "input_audio_buffer.commit" });
           this.sendMessage({
             type: "conversation.item.create",
@@ -144,7 +149,10 @@ export class XAIClient {
       if (eventType === "error") {
         const error = (message as any).error || {};
         console.error(`[${sessionId}] ❌ XAI API Error:`, error);
-        console.error(`[${sessionId}] 🔧 DEBUG: Full error message:`, JSON.stringify(message, null, 2));
+        console.error(
+          `[${sessionId}] 🔧 DEBUG: Full error message:`,
+          JSON.stringify(message, null, 2),
+        );
       }
     } catch (error) {
       console.error(`[${this.config.sessionId}] ❌ Error processing XAI message:`, error);
@@ -158,7 +166,7 @@ export class XAIClient {
     const { sessionId, voice, instructions, sampleRate, tools } = this.config;
 
     console.log(`[${sessionId}] ⚙️  Configuring XAI session with ${sampleRate}Hz audio...`);
-    console.log(`[${sessionId}] 🛠️  Tools: ${tools.map(t => t.function.name).join(", ")}`);
+    console.log(`[${sessionId}] 🛠️  Tools: ${tools.map((t) => t.function.name).join(", ")}`);
 
     // Send session configuration with dynamic sample rate
     const sessionConfig = {
@@ -187,7 +195,10 @@ export class XAIClient {
       },
     };
 
-    console.log(`[${sessionId}] 🔧 DEBUG: Sending session config:`, JSON.stringify(sessionConfig, null, 2));
+    console.log(
+      `[${sessionId}] 🔧 DEBUG: Sending session config:`,
+      JSON.stringify(sessionConfig, null, 2),
+    );
     this.sendMessage(sessionConfig);
     console.log(`[${sessionId}] ⚙️  Waiting for session.updated confirmation...`);
 
@@ -201,9 +212,7 @@ export class XAIClient {
    */
   sendMessage(message: XAIMessage): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.error(
-        `[${this.config.sessionId}] ❌ Cannot send message - WebSocket not open`
-      );
+      console.error(`[${this.config.sessionId}] ❌ Cannot send message - WebSocket not open`);
       return;
     }
 
@@ -215,10 +224,7 @@ export class XAIClient {
         console.log(`[${this.config.sessionId}] 📤 Server → XAI: ${message.type}`);
       }
     } catch (error) {
-      console.error(
-        `[${this.config.sessionId}] ❌ Error sending message to XAI:`,
-        error
-      );
+      console.error(`[${this.config.sessionId}] ❌ Error sending message to XAI:`, error);
     }
   }
 

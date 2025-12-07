@@ -12,7 +12,7 @@ export class SessionManager {
    * Generate a cryptographically secure session ID
    */
   generateSessionId(): string {
-    return `session_${crypto.randomBytes(16).toString('hex')}`;
+    return `session_${crypto.randomBytes(16).toString("hex")}`;
   }
 
   /**
@@ -84,4 +84,3 @@ export class SessionManager {
     return this.sessions.size;
   }
 }
-

@@ -22,7 +22,6 @@ export interface ResponseCreateMessage extends BaseMessage {
   type: "response.create";
 }
 
-
 // Server → Client messages
 export interface ConversationCreatedMessage extends BaseMessage {
   type: "conversation.created";
@@ -116,4 +115,3 @@ export interface TranscriptEntry {
   role: "user" | "assistant";
   content: string;
 }
-

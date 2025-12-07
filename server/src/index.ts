@@ -1,6 +1,6 @@
 /**
  * XAI Voice WebRTC Server
- * 
+ *
  * WebRTC-to-WebSocket relay server for XAI's realtime voice API.
  * Handles signaling, peer connections, and audio/message relay.
  */
@@ -17,7 +17,7 @@ import { getDefaultAgent } from "./agents";
 // Helper to get timestamp with milliseconds
 const getTimestamp = () => {
   const now = new Date();
-  return now.toISOString().split('T')[1].replace('Z', '');
+  return now.toISOString().split("T")[1].replace("Z", "");
 };
 
 // Override console.log to include timestamps
@@ -30,7 +30,9 @@ const { app } = ExpressWs(express());
 
 // CORS Configuration - Configure for your specific domain in production
 // For development, you can use specific localhost ports
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://localhost:5173,http://localhost:8080").split(",");
+const ALLOWED_ORIGINS = (
+  process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://localhost:5173,http://localhost:8080"
+).split(",");
 
 // Enable CORS for web clients - restricted to specific origins
 app.use((req, res, next) => {
@@ -41,11 +43,11 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.header("Access-Control-Allow-Credentials", "true");
-  
+
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
-  
+
   next();
 });
 
@@ -112,20 +114,20 @@ app.post("/session", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        expires_after: { seconds: 300 }
+        expires_after: { seconds: 300 },
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`❌ Failed to get ephemeral token: ${response.status} ${errorText}`);
-      return res.status(response.status).json({ 
+      return res.status(response.status).json({
         error: "Failed to create session",
-        details: errorText 
+        details: errorText,
       });
     }
 
-    const data = await response.json() as Record<string, unknown>;
+    const data = (await response.json()) as Record<string, unknown>;
     console.log("✅ Ephemeral session created");
 
     // Return token along with configuration for frontend
@@ -137,9 +139,9 @@ app.post("/session", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error creating session:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to create session",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -147,7 +149,7 @@ app.post("/session", async (req, res) => {
 app.post("/sessions", (req, res) => {
   // Get sample rate from request body
   const requestedSampleRate = req.body.sample_rate || 24000;
-  
+
   // Validate and find closest supported sample rate
   const SUPPORTED_SAMPLE_RATES = [8000, 16000, 21050, 24000, 32000, 44100, 48000];
   let sampleRate = 24000; // default
@@ -155,12 +157,12 @@ app.post("/sessions", (req, res) => {
     sampleRate = requestedSampleRate;
   } else {
     // Find closest supported sample rate
-    sampleRate = SUPPORTED_SAMPLE_RATES.reduce((prev, curr) => 
-      Math.abs(curr - requestedSampleRate) < Math.abs(prev - requestedSampleRate) ? curr : prev
+    sampleRate = SUPPORTED_SAMPLE_RATES.reduce((prev, curr) =>
+      Math.abs(curr - requestedSampleRate) < Math.abs(prev - requestedSampleRate) ? curr : prev,
     );
     console.log(`Sample rate ${requestedSampleRate}Hz not supported, using ${sampleRate}Hz`);
   }
-  
+
   const session = sessionManager.createSession(sampleRate);
   res.json({
     session_id: session.id,
@@ -186,7 +188,7 @@ app.get("/sessions", (req, res) => {
 app.delete("/sessions/:sessionId", (req, res) => {
   const { sessionId } = req.params;
   const session = sessionManager.getSession(sessionId);
-  
+
   if (!session) {
     return res.status(404).json({ error: "Session not found" });
   }
@@ -199,7 +201,7 @@ app.delete("/sessions/:sessionId", (req, res) => {
   }
 
   sessionManager.deleteSession(sessionId);
-  
+
   res.json({
     message: "Session deleted",
     session_id: sessionId,
@@ -209,7 +211,7 @@ app.delete("/sessions/:sessionId", (req, res) => {
 app.get("/sessions/:sessionId/stats", async (req, res) => {
   const { sessionId } = req.params;
   const session = sessionManager.getSession(sessionId);
-  
+
   if (!session) {
     return res.status(404).json({ error: "Session not found" });
   }
@@ -221,7 +223,7 @@ app.get("/sessions/:sessionId/stats", async (req, res) => {
 
   const stats = await peer.getStats();
   sessionManager.updateSessionStats(sessionId, stats);
-  
+
   res.json({
     session_id: sessionId,
     stats,
@@ -239,7 +241,7 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
   // Verify session exists (must be created via POST /sessions first)
   const session = sessionManager.getSession(sessionId);
   if (!session) {
-    ws.close(1002, 'Session not found. Create session first via POST /sessions');
+    ws.close(1002, "Session not found. Create session first via POST /sessions");
     console.log(`[${sessionId}] ❌ Session not found - signaling connection rejected`);
     return;
   }
@@ -261,7 +263,8 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
   peerConnections.set(sessionId, peerManager);
 
   // Initialize XAI connection in parallel (don't block offer creation)
-  const xaiInitPromise = peerManager.initializeXAI()
+  const xaiInitPromise = peerManager
+    .initializeXAI()
     .then(() => {
       console.log(`[${sessionId}] ✅ XAI API initialized`);
     })
@@ -275,7 +278,7 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
   ws.on("message", async (data: WebSocket.Data) => {
     try {
       const message: SignalingMessage = JSON.parse(data.toString());
-      
+
       switch (message.type) {
         case "answer":
           console.log(`[${sessionId}] 📥 Answer received from client`);
@@ -283,7 +286,7 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
             type: "answer",
             sdp: message.sdp,
           });
-          
+
           // Send ready message
           const readyMessage: SignalingMessage = { type: "ready" };
           ws.send(JSON.stringify(readyMessage));
@@ -307,14 +310,14 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
   // Handle client disconnect
   ws.on("close", () => {
     console.log(`[${sessionId}] Client disconnected`);
-    
+
     // Clean up peer connection
     peerManager.close();
     peerConnections.delete(sessionId);
-    
+
     // Update session status
     sessionManager.updateSessionStatus(sessionId, "closed");
-    
+
     console.log(`[${sessionId}] Session cleaned up`);
   });
 
@@ -376,7 +379,7 @@ app.listen(PORT, () => {
   console.log(`🎙️  Voice: ${VOICE}`);
   console.log(`🤖 Agent: ${defaultAgent.name}`);
   console.log(`📝 Instructions: ${defaultAgent.instructions.substring(0, 50)}...`);
-  console.log(`🛠️  Tools: ${defaultAgent.tools.map(t => t.function.name).join(", ")}`);
+  console.log(`🛠️  Tools: ${defaultAgent.tools.map((t) => t.function.name).join(", ")}`);
   console.log(`🔒 CORS Origins: ${ALLOWED_ORIGINS.join(", ")}`);
   console.log("=".repeat(60));
   console.log(`Server running at http://localhost:${PORT}`);
@@ -389,6 +392,3 @@ app.listen(PORT, () => {
     console.log("⚠️  Create a .env file with your XAI_API_KEY");
   }
 });
-
-
-

@@ -2,6 +2,7 @@
  * Tool definitions and execution for the agent system
  */
 
+import { ObjectId } from "mongodb";
 import type { ToolDefinition } from "../agents/types";
 import { getDb } from "../db";
 
@@ -79,6 +80,7 @@ export const createFlashcardTool: ToolDefinition = {
 /**
  * Tool to get a random flashcard for review
  */
+let previousFlashcardId: string | undefined;
 export const getRandomFlashcardTool: ToolDefinition = {
   type: "function",
   function: {
@@ -93,14 +95,22 @@ export const getRandomFlashcardTool: ToolDefinition = {
   },
   execute: async (_args, context) => {
     const db = await getDb();
+
+    const matchStage = previousFlashcardId
+      ? { $match: { _id: { $ne: new ObjectId(previousFlashcardId) } } }
+      : { $match: {} };
+
     const flashcards = await db
       .collection("flashcards")
-      // .aggregate([{ $match: { sessionId: context.sessionId } }, { $sample: { size: 1 } }])
-      .aggregate([{ $sample: { size: 1 } }])
+      .aggregate([
+        matchStage,
+        // optionally also filter by sessionId:
+        // { $match: { sessionId: context.sessionId } },
+        { $sample: { size: 1 } },
+      ])
       .toArray();
 
     if (flashcards.length === 0) {
-      console.log(`[${context.sessionId}] 📚 No flashcards found`);
       return {
         found: false,
         message: "No flashcards available. The user should learn something first.",
@@ -108,8 +118,7 @@ export const getRandomFlashcardTool: ToolDefinition = {
     }
 
     const flashcard = flashcards[0];
-    console.log(`[${context.sessionId}] 📚 Retrieved flashcard:`);
-    console.log(`[${context.sessionId}]    Q: ${flashcard.question}`);
+    previousFlashcardId = flashcard._id.toString();
 
     // Store the current flashcard for the session
     await db

@@ -31,6 +31,7 @@ export const loadReviewAgent: AgentLoader = async (): Promise<AgentConfig> => {
     name: "review",
     instructions: baseInstructions,
     tools: [getRandomFlashcardTool, validateAnswerTool],
-    greeting: "Start by saying something like 'Let's review your flashcards!' then get the first flashcard using the get_random_flashcard tool and begin quizzing the user.",
+    greeting:
+      "Start by saying something like 'Let's review your flashcards!' then get the first flashcard using the get_random_flashcard tool and begin quizzing the user.",
   };
 };

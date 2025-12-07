@@ -42,11 +42,11 @@ export const loadLearnAgent: AgentLoader = async (params?: AgentParams): Promise
       .toArray();
 
     if (recentFlashcards.length > 0) {
-      const recentSummary = recentFlashcards
-        .map((fc) => `- "${fc.question}"`)
-        .join("\n");
+      const recentSummary = recentFlashcards.map((fc) => `- "${fc.question}"`).join("\n");
       instructions += `\n\nTheir most recent flashcards on this topic are:\n${recentSummary}\n\nUse these to help guide the conversation.`;
-      console.log(`📚 Learn agent loaded ${recentFlashcards.length} recent flashcards for topic: ${topic}`);
+      console.log(
+        `📚 Learn agent loaded ${recentFlashcards.length} recent flashcards for topic: ${topic}`,
+      );
     }
   }
 

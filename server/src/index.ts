@@ -104,9 +104,11 @@ app.post("/session", sessionLimiter, async (req, res) => {
       ? getAgentConfig(agentName, { topic })
       : getDefaultAgent());
 
-    console.log(`📝 Creating ephemeral session for agent: ${agent.name}${topic ? ` (topic: ${topic})` : ""}...`);
+    console.log(
+      `📝 Creating ephemeral session for agent: ${agent.name}${topic ? ` (topic: ${topic})` : ""}...`,
+    );
 
-    console.log('agent instructions:', agent.instructions);
+    console.log("agent instructions:", agent.instructions);
 
     const SESSION_REQUEST_URL = "https://api.x.ai/v1/realtime/client_secrets";
     const response = await fetch(SESSION_REQUEST_URL, {

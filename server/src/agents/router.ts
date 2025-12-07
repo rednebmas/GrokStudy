@@ -37,8 +37,14 @@ export const agentRouterTool: ToolDefinition = {
     },
   },
   execute: async (args, context) => {
-    const { agent, reason, topic } = args as unknown as { agent: AgentName; reason: string; topic?: string };
-    console.log(`[${context.sessionId}] 🔄 Switching to ${agent} agent: ${reason}${topic ? ` (topic: ${topic})` : ""}`);
+    const { agent, reason, topic } = args as unknown as {
+      agent: AgentName;
+      reason: string;
+      topic?: string;
+    };
+    console.log(
+      `[${context.sessionId}] 🔄 Switching to ${agent} agent: ${reason}${topic ? ` (topic: ${topic})` : ""}`,
+    );
     return { switched: true, agent, reason, topic };
   },
 };
@@ -52,7 +58,10 @@ const agentLoaders: Record<AgentName, AgentLoader> = {
 /**
  * Get the configuration for a specific agent (async to allow data loading)
  */
-export async function getAgentConfig(agentName: AgentName, params?: AgentParams): Promise<AgentConfig> {
+export async function getAgentConfig(
+  agentName: AgentName,
+  params?: AgentParams,
+): Promise<AgentConfig> {
   const loader = agentLoaders[agentName];
   const agent = await loader(params);
   return {

@@ -313,7 +313,13 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
                 }
 
                 // Notify about flashcard creation
-                if (toolMessage.name === "create_flashcard" && result && typeof result === "object" && "success" in result && result.success) {
+                if (
+                  toolMessage.name === "create_flashcard" &&
+                  result &&
+                  typeof result === "object" &&
+                  "success" in result &&
+                  result.success
+                ) {
                   onMessage({
                     type: "flashcard.created",
                     question: args.question,

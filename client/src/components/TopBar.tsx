@@ -22,10 +22,8 @@ export const TopBar: React.FC<TopBarProps> = ({ isConnected, provider }) => {
         alignItems: "center",
       }}
     >
-      <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}>
-        XAI Voice Demo
-      </h1>
-      
+      <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}>XAI Voice Demo</h1>
+
       <div style={{ display: "flex", gap: "2rem", alignItems: "center" }}>
         {provider && (
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -33,7 +31,7 @@ export const TopBar: React.FC<TopBarProps> = ({ isConnected, provider }) => {
             <span style={{ fontWeight: "bold" }}>{provider}</span>
           </div>
         )}
-        
+
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <div
             style={{
@@ -43,12 +41,9 @@ export const TopBar: React.FC<TopBarProps> = ({ isConnected, provider }) => {
               backgroundColor: isConnected ? "#00ff00" : "#ff0000",
             }}
           />
-          <span style={{ fontSize: "0.9rem" }}>
-            {isConnected ? "Connected" : "Disconnected"}
-          </span>
+          <span style={{ fontSize: "0.9rem" }}>{isConnected ? "Connected" : "Disconnected"}</span>
         </div>
       </div>
     </div>
   );
 };
-

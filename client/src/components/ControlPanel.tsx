@@ -31,7 +31,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       }}
     >
       <h2 style={{ margin: "0 0 1rem 0", fontSize: "1.2rem" }}>Controls</h2>
-      
+
       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
         <button
           onClick={onStart}
@@ -48,7 +48,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         >
           START
         </button>
-        
+
         <button
           onClick={onStop}
           disabled={!isConnected}
@@ -69,13 +69,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       <div style={{ marginTop: "1rem" }}>
         <div style={{ marginBottom: "0.5rem", fontSize: "0.9rem" }}>
           <strong>Status:</strong>{" "}
-          {isConnected
-            ? isCapturing
-              ? "Recording"
-              : "Connected (waiting)"
-            : "Not connected"}
+          {isConnected ? (isCapturing ? "Recording" : "Connected (waiting)") : "Not connected"}
         </div>
-        
+
         {isCapturing && (
           <div style={{ marginTop: "1rem" }}>
             <div style={{ marginBottom: "0.5rem", fontSize: "0.9rem" }}>
@@ -104,4 +100,3 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     </div>
   );
 };
-

@@ -21,7 +21,7 @@ export function useAudioStream(): UseAudioStreamReturn {
   const [isCapturing, setIsCapturing] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [sampleRate, setSampleRate] = useState(0);
-  
+
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
@@ -43,104 +43,107 @@ export function useAudioStream(): UseAudioStreamReturn {
   }, []);
 
   // Start audio capture - returns the detected sample rate
-  const startCapture = useCallback(async (onAudioData: (base64Audio: string) => void): Promise<number> => {
-    try {
-      // Initialize audio context first to get native sample rate
-      const audioContext = getAudioContext();
-      const nativeSampleRate = audioContext.sampleRate;
-      
-      // Request microphone access with native sample rate
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: nativeSampleRate,
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
+  const startCapture = useCallback(
+    async (onAudioData: (base64Audio: string) => void): Promise<number> => {
+      try {
+        // Initialize audio context first to get native sample rate
+        const audioContext = getAudioContext();
+        const nativeSampleRate = audioContext.sampleRate;
 
-      mediaStreamRef.current = stream;
-      
-      // Resume context if suspended
-      if (audioContext.state === "suspended") {
-        await audioContext.resume();
-      }
+        // Request microphone access with native sample rate
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            sampleRate: nativeSampleRate,
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
 
-      // Create source from microphone
-      const source = audioContext.createMediaStreamSource(stream);
-      sourceNodeRef.current = source;
+        mediaStreamRef.current = stream;
 
-      // Create script processor for audio chunks
-      const bufferSize = 4096;
-      const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
-      
-      let audioBuffer: Float32Array[] = [];
-      let totalSamples = 0;
-      const chunkSizeSamples = (audioContext.sampleRate * CHUNK_DURATION_MS) / 1000;
-
-      processor.onaudioprocess = (event) => {
-        const inputData = event.inputBuffer.getChannelData(0);
-        
-        // Calculate audio level
-        let sum = 0;
-        for (let i = 0; i < inputData.length; i++) {
-          sum += inputData[i] * inputData[i];
+        // Resume context if suspended
+        if (audioContext.state === "suspended") {
+          await audioContext.resume();
         }
-        const rms = Math.sqrt(sum / inputData.length);
-        setAudioLevel(rms);
 
-        // Buffer audio data
-        audioBuffer.push(new Float32Array(inputData));
-        totalSamples += inputData.length;
+        // Create source from microphone
+        const source = audioContext.createMediaStreamSource(stream);
+        sourceNodeRef.current = source;
 
-        // Send chunks of ~100ms
-        while (totalSamples >= chunkSizeSamples) {
-          const chunk = new Float32Array(chunkSizeSamples);
-          let offset = 0;
+        // Create script processor for audio chunks
+        const bufferSize = 4096;
+        const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
 
-          while (offset < chunkSizeSamples && audioBuffer.length > 0) {
-            const buffer = audioBuffer[0];
-            const needed = chunkSizeSamples - offset;
-            const available = buffer.length;
+        let audioBuffer: Float32Array[] = [];
+        let totalSamples = 0;
+        const chunkSizeSamples = (audioContext.sampleRate * CHUNK_DURATION_MS) / 1000;
 
-            if (available <= needed) {
-              // Use entire buffer
-              chunk.set(buffer, offset);
-              offset += available;
-              totalSamples -= available;
-              audioBuffer.shift();
-            } else {
-              // Use part of buffer
-              chunk.set(buffer.subarray(0, needed), offset);
-              audioBuffer[0] = buffer.subarray(needed);
-              offset += needed;
-              totalSamples -= needed;
-            }
+        processor.onaudioprocess = (event) => {
+          const inputData = event.inputBuffer.getChannelData(0);
+
+          // Calculate audio level
+          let sum = 0;
+          for (let i = 0; i < inputData.length; i++) {
+            sum += inputData[i] * inputData[i];
           }
+          const rms = Math.sqrt(sum / inputData.length);
+          setAudioLevel(rms);
 
-          // Convert to PCM16 and send
-          const base64Audio = float32ToPCM16Base64(chunk);
-          onAudioData(base64Audio);
-        }
-      };
+          // Buffer audio data
+          audioBuffer.push(new Float32Array(inputData));
+          totalSamples += inputData.length;
 
-      processorNodeRef.current = processor;
+          // Send chunks of ~100ms
+          while (totalSamples >= chunkSizeSamples) {
+            const chunk = new Float32Array(chunkSizeSamples);
+            let offset = 0;
 
-      // Connect nodes
-      source.connect(processor);
-      processor.connect(audioContext.destination);
+            while (offset < chunkSizeSamples && audioBuffer.length > 0) {
+              const buffer = audioBuffer[0];
+              const needed = chunkSizeSamples - offset;
+              const available = buffer.length;
 
-      setIsCapturing(true);
-      console.log(`Audio capture started at ${nativeSampleRate}Hz (native)`);
-      
-      // Return the sample rate for immediate use
-      return nativeSampleRate;
-    } catch (error) {
-      console.error("Failed to start audio capture:", error);
-      throw error;
-    }
-  }, [getAudioContext]);
+              if (available <= needed) {
+                // Use entire buffer
+                chunk.set(buffer, offset);
+                offset += available;
+                totalSamples -= available;
+                audioBuffer.shift();
+              } else {
+                // Use part of buffer
+                chunk.set(buffer.subarray(0, needed), offset);
+                audioBuffer[0] = buffer.subarray(needed);
+                offset += needed;
+                totalSamples -= needed;
+              }
+            }
+
+            // Convert to PCM16 and send
+            const base64Audio = float32ToPCM16Base64(chunk);
+            onAudioData(base64Audio);
+          }
+        };
+
+        processorNodeRef.current = processor;
+
+        // Connect nodes
+        source.connect(processor);
+        processor.connect(audioContext.destination);
+
+        setIsCapturing(true);
+        console.log(`Audio capture started at ${nativeSampleRate}Hz (native)`);
+
+        // Return the sample rate for immediate use
+        return nativeSampleRate;
+      } catch (error) {
+        console.error("Failed to start audio capture:", error);
+        throw error;
+      }
+    },
+    [getAudioContext],
+  );
 
   // Stop audio capture
   const stopCapture = useCallback(() => {
@@ -176,7 +179,7 @@ export function useAudioStream(): UseAudioStreamReturn {
       }
       currentPlaybackSourceRef.current = null;
     }
-    
+
     // Clear the playback queue
     playbackQueueRef.current = [];
     isPlayingRef.current = false;
@@ -184,23 +187,26 @@ export function useAudioStream(): UseAudioStreamReturn {
   }, []);
 
   // Play audio
-  const playAudio = useCallback((base64Audio: string) => {
-    try {
-      const audioContext = getAudioContext();
-      const float32Data = base64PCM16ToFloat32(base64Audio);
-      
-      // Add to playback queue
-      playbackQueueRef.current.push(float32Data);
+  const playAudio = useCallback(
+    (base64Audio: string) => {
+      try {
+        const audioContext = getAudioContext();
+        const float32Data = base64PCM16ToFloat32(base64Audio);
 
-      // Start playback if not already playing
-      if (!isPlayingRef.current) {
-        isPlayingRef.current = true;
-        playNextChunk(audioContext);
+        // Add to playback queue
+        playbackQueueRef.current.push(float32Data);
+
+        // Start playback if not already playing
+        if (!isPlayingRef.current) {
+          isPlayingRef.current = true;
+          playNextChunk(audioContext);
+        }
+      } catch (error) {
+        console.error("Error playing audio:", error);
       }
-    } catch (error) {
-      console.error("Error playing audio:", error);
-    }
-  }, [getAudioContext]);
+    },
+    [getAudioContext],
+  );
 
   // Play next chunk from queue
   const playNextChunk = useCallback((audioContext: AudioContext) => {
@@ -253,4 +259,3 @@ export function useAudioStream(): UseAudioStreamReturn {
     sampleRate,
   };
 }
-

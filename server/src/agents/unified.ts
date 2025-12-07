@@ -6,11 +6,7 @@
  */
 
 import type { AgentConfig } from "./types";
-import {
-  createFlashcardTool,
-  getRandomFlashcardTool,
-  validateAnswerTool,
-} from "../tools";
+import { createFlashcardTool, getRandomFlashcardTool, validateAnswerTool } from "../tools";
 
 export const unifiedAgent: AgentConfig = {
   name: "learn", // Default mode

@@ -114,4 +114,3 @@ export interface TranscriptEntry {
   role: "user" | "assistant";
   content: string;
 }
-

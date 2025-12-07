@@ -95,15 +95,15 @@ export const getRandomFlashcardTool: ToolDefinition = {
     const db = await getDb();
     const flashcards = await db
       .collection("flashcards")
-      .aggregate([
-        { $match: { sessionId: context.sessionId } },
-        { $sample: { size: 1 } },
-      ])
+      .aggregate([{ $match: { sessionId: context.sessionId } }, { $sample: { size: 1 } }])
       .toArray();
 
     if (flashcards.length === 0) {
       console.log(`[${context.sessionId}] 📚 No flashcards found`);
-      return { found: false, message: "No flashcards available. The user should learn something first." };
+      return {
+        found: false,
+        message: "No flashcards available. The user should learn something first.",
+      };
     }
 
     const flashcard = flashcards[0];
@@ -111,13 +111,20 @@ export const getRandomFlashcardTool: ToolDefinition = {
     console.log(`[${context.sessionId}]    Q: ${flashcard.question}`);
 
     // Store the current flashcard for the session
-    await db.collection("sessions").updateOne(
-      { sessionId: context.sessionId },
-      { $set: { currentFlashcardId: flashcard._id } },
-      { upsert: true }
-    );
+    await db
+      .collection("sessions")
+      .updateOne(
+        { sessionId: context.sessionId },
+        { $set: { currentFlashcardId: flashcard._id } },
+        { upsert: true },
+      );
 
-    return { found: true, question: flashcard.question, answer: flashcard.answer, topic: flashcard.topic };
+    return {
+      found: true,
+      question: flashcard.question,
+      answer: flashcard.answer,
+      topic: flashcard.topic,
+    };
   },
 };
 
@@ -150,9 +157,7 @@ export const validateAnswerTool: ToolDefinition = {
     const db = await getDb();
 
     // Get the current flashcard from the session
-    const session = await db
-      .collection("sessions")
-      .findOne({ sessionId: context.sessionId });
+    const session = await db.collection("sessions").findOne({ sessionId: context.sessionId });
 
     if (!session?.currentFlashcardId) {
       console.log(`[${context.sessionId}] ⚠️ No current flashcard to validate`);

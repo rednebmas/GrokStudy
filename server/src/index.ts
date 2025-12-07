@@ -15,7 +15,9 @@ import type { AgentName } from "./agents";
 const app = express();
 
 // CORS Configuration - Configure for your specific domain in production
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://localhost:5173,http://localhost:8080").split(",");
+const ALLOWED_ORIGINS = (
+  process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://localhost:5173,http://localhost:8080"
+).split(",");
 
 // Enable CORS for web clients - restricted to specific origins
 app.use((req, res, next) => {
@@ -40,13 +42,13 @@ app.use(express.json());
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
-  message: 'Too many requests from this IP, please try again later.'
+  message: "Too many requests from this IP, please try again later.",
 });
 
 const sessionLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 10,
-  message: 'Too many session creation requests, please try again later.'
+  message: "Too many session creation requests, please try again later.",
 });
 
 app.use(limiter);
@@ -96,9 +98,8 @@ app.post("/session", sessionLimiter, async (req, res) => {
   try {
     // Get agent from query param, default to learn
     const agentName = req.query.agent as string | undefined;
-    const agent = agentName && isValidAgent(agentName)
-      ? getAgentConfig(agentName)
-      : getDefaultAgent();
+    const agent =
+      agentName && isValidAgent(agentName) ? getAgentConfig(agentName) : getDefaultAgent();
 
     console.log(`📝 Creating ephemeral session for agent: ${agent.name}...`);
 
@@ -110,20 +111,20 @@ app.post("/session", sessionLimiter, async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        expires_after: { seconds: 300 }
+        expires_after: { seconds: 300 },
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`❌ Failed to get ephemeral token: ${response.status} ${errorText}`);
-      return res.status(response.status).json({ 
+      return res.status(response.status).json({
         error: "Failed to create session",
-        details: errorText 
+        details: errorText,
       });
     }
 
-    const data = await response.json() as { value: string; expires_at: number };
+    const data = (await response.json()) as { value: string; expires_at: number };
     console.log("✅ Ephemeral session created");
 
     // Transform to match client's expected format
@@ -139,9 +140,9 @@ app.post("/session", sessionLimiter, async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error creating session:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to create session",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -149,7 +150,12 @@ app.post("/session", sessionLimiter, async (req, res) => {
 // Tool execution endpoint - client relays tool calls here
 app.post("/tools/execute", async (req, res) => {
   try {
-    const { toolName, args, sessionId, agent: agentParam } = req.body as {
+    const {
+      toolName,
+      args,
+      sessionId,
+      agent: agentParam,
+    } = req.body as {
       toolName: string;
       args: Record<string, unknown>;
       sessionId: string;
@@ -163,13 +169,10 @@ app.post("/tools/execute", async (req, res) => {
     console.log(`[${sessionId}] 🛠️  Executing tool: ${toolName}`);
 
     // Get agent config to find the tool
-    const agent = agentParam && isValidAgent(agentParam)
-      ? getAgentConfig(agentParam)
-      : getDefaultAgent();
+    const agent =
+      agentParam && isValidAgent(agentParam) ? getAgentConfig(agentParam) : getDefaultAgent();
 
-    const tool = agent.tools.find(
-      (t) => t.type === "function" && t.function.name === toolName
-    );
+    const tool = agent.tools.find((t) => t.type === "function" && t.function.name === toolName);
 
     if (!tool || tool.type !== "function") {
       console.error(`[${sessionId}] ❌ Unknown tool: ${toolName}`);

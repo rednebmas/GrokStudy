@@ -14,19 +14,21 @@ export interface ToolParameter {
 
 export type ToolResult = Record<string, unknown> | string | null;
 
-export type ToolDefinition = {type: 'web_search'} | {
-  type: "function";
-  function: {
-    name: string;
-    description: string;
-    parameters: {
-      type: "object";
-      properties: Record<string, ToolParameter>;
-      required: string[];
+export type ToolDefinition =
+  | { type: "web_search" }
+  | {
+      type: "function";
+      function: {
+        name: string;
+        description: string;
+        parameters: {
+          type: "object";
+          properties: Record<string, ToolParameter>;
+          required: string[];
+        };
+      };
+      execute: (args: Record<string, unknown>, context: ToolContext) => Promise<ToolResult>;
     };
-  };
-  execute: (args: Record<string, unknown>, context: ToolContext) => Promise<ToolResult>;
-}
 
 export interface AgentConfig {
   name: AgentName;

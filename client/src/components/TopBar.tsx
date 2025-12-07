@@ -13,7 +13,7 @@ export const TopBar: React.FC<TopBarProps> = ({ isConnected, provider }) => {
   return (
     <div
       style={{
-          backgroundColor: "#141414ff",
+        backgroundColor: "#141414ff",
         border: "2px solid #4f4f4fff",
         borderRadius: "8px",
         color: "#fff",

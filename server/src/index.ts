@@ -70,7 +70,6 @@ const sessionManager = new SessionManager();
 // Store active peer connections
 const peerConnections = new Map<string, RTCPeerManager>();
 
-
 //BELOW INITIALIZES DB CONNECTION HELPER
 
 (async () => {
@@ -81,7 +80,6 @@ const peerConnections = new Map<string, RTCPeerManager>();
     console.error("MongoDB connection failed", err);
   }
 })();
-
 
 // ========================================
 // REST API Endpoints
@@ -194,7 +192,6 @@ app.post("/sessions", (req, res) => {
     sample_rate: session.sample_rate,
     status: session.status,
   });
-
 });
 
 app.get("/sessions", (req, res) => {

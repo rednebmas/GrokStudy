@@ -8,5 +8,5 @@ let ready: Promise<MongoClient>;
 
 export function getDb() {
   if (!ready) ready = client.connect();
-  return ready.then(c => c.db()); // uses DB from URI
+  return ready.then((c) => c.db()); // uses DB from URI
 }

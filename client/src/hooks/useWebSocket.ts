@@ -312,6 +312,16 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
                   return;
                 }
 
+                // Notify about flashcard creation
+                if (toolMessage.name === "create_flashcard" && result && typeof result === "object" && "success" in result && result.success) {
+                  onMessage({
+                    type: "flashcard.created",
+                    question: args.question,
+                    answer: args.answer,
+                    topic: args.topic,
+                  } as Message);
+                }
+
                 // Send result back to XAI
                 const functionOutput = {
                   type: "conversation.item.create",

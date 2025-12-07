@@ -78,10 +78,19 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({ transcript }) 
                 <span
                   style={{
                     fontWeight: "bold",
-                    color: entry.role === "user" ? "#00ff00" : "#00ffff",
+                    color:
+                      entry.role === "user"
+                        ? "#00ff00"
+                        : entry.role === "flashcard"
+                          ? "#ffff00"
+                          : "#00ffff",
                   }}
                 >
-                  {entry.role === "user" ? "USER" : "ASSISTANT"}
+                  {entry.role === "user"
+                    ? "USER"
+                    : entry.role === "flashcard"
+                      ? "FLASHCARD CREATED"
+                      : "ASSISTANT"}
                 </span>
                 <span style={{ color: "#666" }}>{formatTime(entry.timestamp)}</span>
               </div>

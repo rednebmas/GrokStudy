@@ -111,6 +111,6 @@ export interface DebugLogEntry {
 // Transcript entry
 export interface TranscriptEntry {
   timestamp: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "flashcard";
   content: string;
 }

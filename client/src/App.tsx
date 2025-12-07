@@ -26,6 +26,19 @@ function App() {
   // Handle incoming WebSocket messages
   const handleMessage = useCallback(
     (message: Message) => {
+      // Handle flashcard created
+      if (message.type === "flashcard.created") {
+        const { question, answer } = message as Message & { question: string; answer: string };
+        setTranscript((prev) => [
+          ...prev,
+          {
+            timestamp: new Date().toISOString(),
+            role: "flashcard",
+            content: `Q: ${question}\nA: ${answer}`,
+          },
+        ]);
+      }
+
       // Handle bot audio
       if (message.type === "response.output_audio.delta" && "delta" in message) {
         playAudio(message.delta as string);

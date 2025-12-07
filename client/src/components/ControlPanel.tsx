@@ -44,7 +44,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             border: `2px solid ${disabled ? "#666" : "#00ff00"}`,
             borderRadius: "8px",
             padding: "0.75rem 2rem",
-            paddingLeft: '1.5rem',
+            paddingLeft: "1.5rem",
             fontSize: "1rem",
             cursor: disabled ? "not-allowed" : "pointer",
             fontWeight: "bold",

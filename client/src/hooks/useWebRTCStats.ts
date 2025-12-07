@@ -19,7 +19,7 @@ export interface WebRTCStats {
 
 export function useWebRTCStats(
   peerConnection: RTCPeerConnection | null,
-  isConnected: boolean
+  isConnected: boolean,
 ): WebRTCStats {
   const [stats, setStats] = useState<WebRTCStats>({
     bitrate: { audio_in: 0, audio_out: 0 },
@@ -100,13 +100,9 @@ export function useWebRTCStats(
 
         // Calculate bitrates (bits per second)
         const bitrateIn =
-          previousBytesReceived > 0
-            ? ((bytesReceived - previousBytesReceived) * 8) / timeDelta
-            : 0;
+          previousBytesReceived > 0 ? ((bytesReceived - previousBytesReceived) * 8) / timeDelta : 0;
         const bitrateOut =
-          previousBytesSent > 0
-            ? ((bytesSent - previousBytesSent) * 8) / timeDelta
-            : 0;
+          previousBytesSent > 0 ? ((bytesSent - previousBytesSent) * 8) / timeDelta : 0;
 
         previousBytesReceived = bytesReceived;
         previousBytesSent = bytesSent;
@@ -133,4 +129,3 @@ export function useWebRTCStats(
 
   return stats;
 }
-

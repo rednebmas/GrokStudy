@@ -43,7 +43,7 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({ logs }) => {
       }}
     >
       <h2 style={{ margin: "0 0 1rem 0", fontSize: "1.2rem" }}>Debug Console</h2>
-      
+
       <div
         ref={consoleRef}
         style={{
@@ -91,4 +91,3 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({ logs }) => {
     </div>
   );
 };
-

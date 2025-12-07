@@ -17,9 +17,7 @@ interface UseWebSocketReturn {
   provider: string | null;
 }
 
-export function useWebSocket(
-  onMessage: (message: Message) => void
-): UseWebSocketReturn {
+export function useWebSocket(onMessage: (message: Message) => void): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [debugLogs, setDebugLogs] = useState<DebugLogEntry[]>([]);
   const [provider, setProvider] = useState<string | null>(null);
@@ -126,7 +124,7 @@ export function useWebSocket(
         console.error("WebSocket not connected");
       }
     },
-    [addDebugLog]
+    [addDebugLog],
   );
 
   // Cleanup on unmount
@@ -148,4 +146,3 @@ export function useWebSocket(
     provider,
   };
 }
-

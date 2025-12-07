@@ -3,11 +3,7 @@
  * Handles WebRTC peer connection, DataChannel, and XAI API integration
  */
 
-import {
-  RTCPeerConnection,
-  RTCSessionDescription,
-  RTCIceCandidate,
-} from "werift";
+import { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } from "werift";
 import type { WebRTCStats } from "./types";
 import type { ToolDefinition } from "./agents/types";
 import { XAIClient } from "./xai-client";
@@ -75,8 +71,9 @@ export class RTCPeerManager {
 
     console.log(`[${config.sessionId}] 🔧 Configuring ICE servers:`);
     iceServers.forEach((server, index) => {
-      const serverInfo = typeof server.urls === 'string' ? server.urls : (server.urls as any).join(', ');
-      const hasAuth = 'username' in server ? ` (auth: ${(server as any).username})` : '';
+      const serverInfo =
+        typeof server.urls === "string" ? server.urls : (server.urls as any).join(", ");
+      const hasAuth = "username" in server ? ` (auth: ${(server as any).username})` : "";
       console.log(`[${config.sessionId}]   ${index + 1}. ${serverInfo}${hasAuth}`);
     });
 
@@ -96,18 +93,18 @@ export class RTCPeerManager {
 
     this.pc.onicecandidate = (event) => {
       if (event.candidate) {
-        const timestamp = new Date().toISOString().split('T')[1].replace('Z', '');
+        const timestamp = new Date().toISOString().split("T")[1].replace("Z", "");
         const candidate = event.candidate as any;
         const candidateStr = candidate.candidate || JSON.stringify(candidate);
 
         // Parse candidate type and server info
-        let candidateType = candidate.type || 'unknown';
-        let address = candidate.address || candidate.ip || 'unknown';
-        let port = candidate.port || '?';
-        let protocol = candidate.protocol || '?';
+        let candidateType = candidate.type || "unknown";
+        let address = candidate.address || candidate.ip || "unknown";
+        let port = candidate.port || "?";
+        let protocol = candidate.protocol || "?";
 
         // Try to extract from candidate string if properties not available
-        if (candidateStr && typeof candidateStr === 'string') {
+        if (candidateStr && typeof candidateStr === "string") {
           const typeMatch = candidateStr.match(/typ (\w+)/);
           const addressMatch = candidateStr.match(/(\d+\.\d+\.\d+\.\d+)/);
           const portMatch = candidateStr.match(/\s(\d+)\s+typ/);
@@ -119,22 +116,28 @@ export class RTCPeerManager {
           if (protocolMatch) protocol = protocolMatch[0].toLowerCase();
         }
 
-        console.log(`[${timestamp}] [${sessionId}] 🧊 ICE candidate: type=${candidateType} proto=${protocol} addr=${address}:${port}`);
+        console.log(
+          `[${timestamp}] [${sessionId}] 🧊 ICE candidate: type=${candidateType} proto=${protocol} addr=${address}:${port}`,
+        );
 
         // Log detailed candidate string for debugging
-        if (candidateStr && typeof candidateStr === 'string' && candidateStr.length < 200) {
+        if (candidateStr && typeof candidateStr === "string" && candidateStr.length < 200) {
           console.log(`[${timestamp}] [${sessionId}]    └─ ${candidateStr}`);
         }
       } else {
-        const timestamp = new Date().toISOString().split('T')[1].replace('Z', '');
-        console.log(`[${timestamp}] [${sessionId}] 🧊 ICE candidate gathering complete (null candidate)`);
+        const timestamp = new Date().toISOString().split("T")[1].replace("Z", "");
+        console.log(
+          `[${timestamp}] [${sessionId}] 🧊 ICE candidate gathering complete (null candidate)`,
+        );
       }
     };
 
     // Monitor ICE gathering state
     (this.pc as any).onicegatheringstatechange = () => {
-      const timestamp = new Date().toISOString().split('T')[1].replace('Z', '');
-      console.log(`[${timestamp}] [${sessionId}] 🧊 ICE gathering state: ${this.pc.iceGatheringState}`);
+      const timestamp = new Date().toISOString().split("T")[1].replace("Z", "");
+      console.log(
+        `[${timestamp}] [${sessionId}] 🧊 ICE gathering state: ${this.pc.iceGatheringState}`,
+      );
     };
 
     this.pc.onconnectionstatechange = () => {
@@ -143,12 +146,17 @@ export class RTCPeerManager {
     };
 
     this.pc.oniceconnectionstatechange = () => {
-      const timestamp = new Date().toISOString().split('T')[1].replace('Z', '');
+      const timestamp = new Date().toISOString().split("T")[1].replace("Z", "");
       this.stats.iceConnectionState = this.pc.iceConnectionState;
-      console.log(`[${timestamp}] [${sessionId}] 🧊 ICE connection state: ${this.pc.iceConnectionState}`);
+      console.log(
+        `[${timestamp}] [${sessionId}] 🧊 ICE connection state: ${this.pc.iceConnectionState}`,
+      );
 
       // Log selected candidate pair when connected
-      if (this.pc.iceConnectionState === 'connected' || this.pc.iceConnectionState === 'completed') {
+      if (
+        this.pc.iceConnectionState === "connected" ||
+        this.pc.iceConnectionState === "completed"
+      ) {
         this.logSelectedCandidatePair();
       }
     };
@@ -265,10 +273,12 @@ export class RTCPeerManager {
     this.xaiClient.setReadyHandler(() => {
       console.log(`[${sessionId}] 📢 Notifying client that XAI is ready for audio`);
       if (this.dataChannel && this.dataChannel.readyState === "open") {
-        this.dataChannel.send(JSON.stringify({
-          type: "xai.ready",
-          message: "XAI session configured, ready for audio input",
-        }));
+        this.dataChannel.send(
+          JSON.stringify({
+            type: "xai.ready",
+            message: "XAI session configured, ready for audio input",
+          }),
+        );
       }
     });
 
@@ -291,7 +301,9 @@ export class RTCPeerManager {
     const setLocalStart = Date.now();
     await this.pc.setLocalDescription(offer);
     console.log(`[${sessionId}] ⏱️  setLocalDescription() took ${Date.now() - setLocalStart}ms`);
-    console.log(`[${sessionId}] 🧊 ICE gathering state after setLocal: ${this.pc.iceGatheringState}`);
+    console.log(
+      `[${sessionId}] 🧊 ICE gathering state after setLocal: ${this.pc.iceGatheringState}`,
+    );
 
     console.log(`[${sessionId}] ✅ Offer created (total: ${Date.now() - startTime}ms)`);
     return { type: offer.type, sdp: this.pc.localDescription?.sdp };
@@ -334,23 +346,29 @@ export class RTCPeerManager {
       if (stats) {
         // Iterate through stats to find the selected candidate pair
         stats.forEach((report: any) => {
-          if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+          if (report.type === "candidate-pair" && report.state === "succeeded") {
             console.log(`[${sessionId}] ✅ Selected ICE candidate pair:`);
-            console.log(`[${sessionId}]    Local:  ${report.localCandidateId || 'unknown'}`);
-            console.log(`[${sessionId}]    Remote: ${report.remoteCandidateId || 'unknown'}`);
-            console.log(`[${sessionId}]    Priority: ${report.priority || 'unknown'}`);
+            console.log(`[${sessionId}]    Local:  ${report.localCandidateId || "unknown"}`);
+            console.log(`[${sessionId}]    Remote: ${report.remoteCandidateId || "unknown"}`);
+            console.log(`[${sessionId}]    Priority: ${report.priority || "unknown"}`);
           }
 
-          if (report.type === 'local-candidate' && report.candidateType) {
-            console.log(`[${sessionId}] 📍 Local candidate: ${report.candidateType} ${report.protocol} ${report.address || report.ip}:${report.port}`);
+          if (report.type === "local-candidate" && report.candidateType) {
+            console.log(
+              `[${sessionId}] 📍 Local candidate: ${report.candidateType} ${report.protocol} ${report.address || report.ip}:${report.port}`,
+            );
           }
 
-          if (report.type === 'remote-candidate' && report.candidateType) {
-            console.log(`[${sessionId}] 📍 Remote candidate: ${report.candidateType} ${report.protocol} ${report.address || report.ip}:${report.port}`);
+          if (report.type === "remote-candidate" && report.candidateType) {
+            console.log(
+              `[${sessionId}] 📍 Remote candidate: ${report.candidateType} ${report.protocol} ${report.address || report.ip}:${report.port}`,
+            );
           }
         });
       } else {
-        console.log(`[${sessionId}] ℹ️  getStats() not available in werift - cannot show selected candidate pair`);
+        console.log(
+          `[${sessionId}] ℹ️  getStats() not available in werift - cannot show selected candidate pair`,
+        );
       }
     } catch (error) {
       console.log(`[${sessionId}] ⚠️  Could not retrieve selected candidate pair:`, error);

@@ -57,4 +57,3 @@ export interface AudioBuffer {
   timestamp: number;
   sampleRate: number;
 }
-

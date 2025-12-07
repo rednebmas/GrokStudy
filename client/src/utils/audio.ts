@@ -53,7 +53,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
  */
 export function resampleTo24kHz(
   audioBuffer: AudioBuffer,
-  targetSampleRate: number = SAMPLE_RATE
+  targetSampleRate: number = SAMPLE_RATE,
 ): Float32Array {
   const sourceRate = audioBuffer.sampleRate;
   const sourceData = audioBuffer.getChannelData(0);
@@ -100,4 +100,3 @@ export function getRMSdB(float32Array: Float32Array): number {
   const rms = calculateRMS(float32Array);
   return 20 * Math.log10(rms);
 }
-

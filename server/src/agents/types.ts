@@ -12,7 +12,9 @@ export interface ToolParameter {
   enum?: string[];
 }
 
-export interface ToolDefinition {
+export type ToolResult = Record<string, unknown> | string | null;
+
+export type ToolDefinition = {type: 'web_search'} | {
   type: "function";
   function: {
     name: string;
@@ -23,7 +25,7 @@ export interface ToolDefinition {
       required: string[];
     };
   };
-  execute: (args: Record<string, unknown>, context: ToolContext) => Promise<void>;
+  execute: (args: Record<string, unknown>, context: ToolContext) => Promise<ToolResult>;
 }
 
 export interface AgentConfig {

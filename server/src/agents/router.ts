@@ -35,6 +35,7 @@ export const agentRouterTool: ToolDefinition = {
     const { agent, reason } = args as unknown as { agent: AgentName; reason: string };
     console.log(`[${context.sessionId}] 🔄 Switching to ${agent} agent: ${reason}`);
     // TODO: Implement actual agent switching logic
+    return { switched: true, agent, reason };
   },
 };
 
@@ -50,7 +51,7 @@ export function getAgentConfig(agentName: AgentName): AgentConfig {
   const agent = agents[agentName];
   return {
     ...agent,
-    tools: [...agent.tools, agentRouterTool],
+    tools: [...agent.tools, agentRouterTool, { type: 'web_search' }],
   };
 }
 

@@ -3,6 +3,7 @@
  */
 
 import type { ToolDefinition } from "../agents/types";
+import { getDb } from "../db";
 
 /**
  * Context passed to tool handlers
@@ -25,6 +26,7 @@ export type ToolHandler<T = Record<string, unknown>> = (
 interface CreateFlashcardArgs {
   question: string;
   answer: string;
+  topic: string;
 }
 
 /**
@@ -56,10 +58,133 @@ export const createFlashcardTool: ToolDefinition = {
     },
   },
   execute: async (args, context) => {
-    const { question, answer } = args as unknown as CreateFlashcardArgs;
+    const { question, answer, topic } = args as unknown as CreateFlashcardArgs;
     console.log(`[${context.sessionId}] 📝 Creating flashcard:`);
     console.log(`[${context.sessionId}]    Q: ${question}`);
     console.log(`[${context.sessionId}]    A: ${answer}`);
-    // TODO: Persist flashcard to database
+
+    const db = await getDb();
+    await db.collection("flashcards").insertOne({
+      sessionId: context.sessionId,
+      question,
+      answer,
+      topic,
+      createdAt: new Date(),
+    });
+
+    return { success: true, question, topic };
+  },
+};
+
+/**
+ * Tool to get a random flashcard for review
+ */
+export const getRandomFlashcardTool: ToolDefinition = {
+  type: "function",
+  function: {
+    name: "get_random_flashcard",
+    description:
+      "Get a random flashcard from the user's collection to quiz them on. Returns the question and answer.",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  execute: async (_args, context) => {
+    const db = await getDb();
+    const flashcards = await db
+      .collection("flashcards")
+      .aggregate([
+        { $match: { sessionId: context.sessionId } },
+        { $sample: { size: 1 } },
+      ])
+      .toArray();
+
+    if (flashcards.length === 0) {
+      console.log(`[${context.sessionId}] 📚 No flashcards found`);
+      return { found: false, message: "No flashcards available. The user should learn something first." };
+    }
+
+    const flashcard = flashcards[0];
+    console.log(`[${context.sessionId}] 📚 Retrieved flashcard:`);
+    console.log(`[${context.sessionId}]    Q: ${flashcard.question}`);
+
+    // Store the current flashcard for the session
+    await db.collection("sessions").updateOne(
+      { sessionId: context.sessionId },
+      { $set: { currentFlashcardId: flashcard._id } },
+      { upsert: true }
+    );
+
+    return { found: true, question: flashcard.question, answer: flashcard.answer, topic: flashcard.topic };
+  },
+};
+
+interface ValidateAnswerArgs {
+  isCorrect: boolean;
+}
+
+/**
+ * Tool to validate and log the user's answer to a flashcard
+ */
+export const validateAnswerTool: ToolDefinition = {
+  type: "function",
+  function: {
+    name: "validate_answer",
+    description:
+      "Record whether the user's answer to the current flashcard is correct. Call this after the user answers a flashcard question.",
+    parameters: {
+      type: "object",
+      properties: {
+        isCorrect: {
+          type: "boolean",
+          description: "Whether the user's answer is correct",
+        },
+      },
+      required: ["isCorrect"],
+    },
+  },
+  execute: async (args, context) => {
+    const { isCorrect } = args as unknown as ValidateAnswerArgs;
+    const db = await getDb();
+
+    // Get the current flashcard from the session
+    const session = await db
+      .collection("sessions")
+      .findOne({ sessionId: context.sessionId });
+
+    if (!session?.currentFlashcardId) {
+      console.log(`[${context.sessionId}] ⚠️ No current flashcard to validate`);
+      return { recorded: false, error: "No current flashcard to validate" };
+    }
+
+    const flashcard = await db
+      .collection("flashcards")
+      .findOne({ _id: session.currentFlashcardId });
+
+    if (!flashcard) {
+      console.log(`[${context.sessionId}] ⚠️ Flashcard not found`);
+      return { recorded: false, error: "Flashcard not found" };
+    }
+
+    // Create an attempt record
+    await db.collection("attempts").insertOne({
+      sessionId: context.sessionId,
+      flashcardId: flashcard._id,
+      isCorrect,
+      attemptedAt: new Date(),
+    });
+
+    if (isCorrect) {
+      console.log(`[${context.sessionId}] ✅ CORRECT`);
+      console.log(`[${context.sessionId}]    Q: ${flashcard.question}`);
+    } else {
+      console.log(`[${context.sessionId}] ❌ INCORRECT`);
+      console.log(`[${context.sessionId}]    Q: ${flashcard.question}`);
+      console.log(`[${context.sessionId}]    Expected: ${flashcard.answer}`);
+    }
+
+    return { recorded: true, isCorrect };
   },
 };

@@ -2,6 +2,8 @@
  * Type definitions for the agent system
  */
 
+import type { ToolContext } from "../tools";
+
 export type AgentName = "learn" | "study";
 
 export interface ToolParameter {
@@ -21,6 +23,7 @@ export interface ToolDefinition {
       required: string[];
     };
   };
+  execute: (args: Record<string, unknown>, context: ToolContext) => Promise<void>;
 }
 
 export interface AgentConfig {

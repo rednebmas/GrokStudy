@@ -31,6 +31,11 @@ export const agentRouterTool: ToolDefinition = {
       required: ["agent", "reason"],
     },
   },
+  execute: async (args, context) => {
+    const { agent, reason } = args as unknown as { agent: AgentName; reason: string };
+    console.log(`[${context.sessionId}] 🔄 Switching to ${agent} agent: ${reason}`);
+    // TODO: Implement actual agent switching logic
+  },
 };
 
 const agents: Record<AgentName, AgentConfig> = {

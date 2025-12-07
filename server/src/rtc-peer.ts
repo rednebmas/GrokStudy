@@ -223,7 +223,22 @@ export class RTCPeerManager {
     const { sessionId } = this.config;
 
     // Set up XAI message handler
-    this.xaiClient.onMessage((message) => {
+    this.xaiClient.onMessage(async (message) => {
+      // Handle tool calls
+      if (message.type === "response.function_call_arguments.done") {
+        const toolName = message.name || "unknown";
+        const args = message.arguments || "{}";
+        console.log(`[${sessionId}] 🛠️  Tool called: ${toolName}`);
+
+        const tool = this.config.tools.find((t) => t.function.name === toolName);
+        if (tool) {
+          const parsedArgs = typeof args === "string" ? JSON.parse(args) : args;
+          await tool.execute(parsedArgs, { sessionId });
+        } else {
+          console.error(`[${sessionId}] ❌ Unknown tool: ${toolName}`);
+        }
+      }
+
       // Handle audio from XAI API
       if (message.type === "response.output_audio.delta" && "delta" in message) {
         // Send audio via DataChannel to client

@@ -24,9 +24,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   return (
     <div
       style={{
-        backgroundColor: "#000",
+        backgroundColor: "#141414ff",
+        border: "2px solid #4f4f4fff",
+        borderRadius: "8px",
         color: "#fff",
-        border: "2px solid #fff",
         padding: "1.5rem",
       }}
     >

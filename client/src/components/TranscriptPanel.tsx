@@ -32,9 +32,10 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({ transcript }) 
   return (
     <div
       style={{
-        backgroundColor: "#000",
+        backgroundColor: "#141414ff",
+        border: "2px solid #4f4f4fff",
+        borderRadius: "8px",
         color: "#fff",
-        border: "2px solid #fff",
         padding: "1rem",
         display: "flex",
         flexDirection: "column",
@@ -49,7 +50,8 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({ transcript }) 
           flex: 1,
           overflow: "auto",
           backgroundColor: "#000",
-          border: "1px solid #fff",
+          border: "1px solid #525252ff",
+          borderRadius: "8px",
           padding: "0.5rem",
         }}
       >

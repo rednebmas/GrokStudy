@@ -249,6 +249,7 @@ function App() {
             border: "none",
             borderRadius: "4px",
             cursor: "pointer",
+            marginLeft: "1rem",
           }}
         >
           View Flashcards

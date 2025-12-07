@@ -13,16 +13,18 @@ export const TopBar: React.FC<TopBarProps> = ({ isConnected, provider }) => {
   return (
     <div
       style={{
-        backgroundColor: "#000",
+          backgroundColor: "#141414ff",
+        border: "2px solid #4f4f4fff",
+        borderRadius: "8px",
         color: "#fff",
-        border: "2px solid #fff",
         padding: "1rem",
         display: "flex",
+        flex: 1,
         justifyContent: "space-between",
         alignItems: "center",
       }}
     >
-      <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}>XAI Voice Demo</h1>
+      <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}>GrokLearn</h1>
 
       <div style={{ display: "flex", gap: "2rem", alignItems: "center" }}>
         {provider && (

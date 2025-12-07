@@ -35,6 +35,7 @@ interface SessionResponse {
   instructions: string;
   tools: unknown[];
   agent: string;
+  greeting?: string;
   error?: string;
 }
 
@@ -84,6 +85,7 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
     instructions: string;
     tools: unknown[];
     sampleRate: number;
+    greeting?: string;
   } | null>(null);
   const sessionInfoRef = useRef<{ sessionId: string; agent: string } | null>(null);
   const isSessionConfigured = useRef(false);
@@ -165,7 +167,10 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
       // Commit any pending audio buffer
       ws.send(JSON.stringify({ type: "input_audio_buffer.commit" }));
 
-      // Create greeting message
+      // Use server-provided greeting or default
+      const greetingText = sessionConfigRef.current?.greeting || "Hello! What would you like to learn about today?";
+
+      // Create greeting message with specific content from server
       const greetingMessage = {
         type: "conversation.item.create",
         item: {
@@ -174,7 +179,7 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
           content: [
             {
               type: "input_text",
-              text: "Say hello and introduce yourself",
+              text: greetingText,
             },
           ],
         },
@@ -228,6 +233,7 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
           instructions: data.instructions,
           tools: data.tools,
           sampleRate,
+          greeting: data.greeting,
         };
         console.log(`🛠️ Tools configured:`, data.tools?.length || 0, "tools");
 

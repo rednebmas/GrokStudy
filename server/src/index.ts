@@ -142,6 +142,7 @@ app.post("/session", sessionLimiter, async (req, res) => {
       instructions: agent.instructions,
       tools: agent.tools,
       agent: agent.name,
+      greeting: agent.greeting,
     });
   } catch (error) {
     console.error("❌ Error creating session:", error);

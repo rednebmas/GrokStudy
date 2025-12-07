@@ -34,6 +34,7 @@ export interface AgentConfig {
   name: AgentName;
   instructions: string;
   tools: ToolDefinition[];
+  greeting?: string;
 }
 
 /**

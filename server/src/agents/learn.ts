@@ -2,7 +2,7 @@
  * Learn Agent - helps users explore topics and creates flashcards
  */
 
-import type { AgentConfig, AgentLoader } from "./types";
+import type { AgentConfig, AgentLoader, AgentParams } from "./types";
 import { createFlashcardTool } from "../tools";
 import { getDb } from "../db";
 
@@ -25,16 +25,30 @@ If the user says they want to review, study, or practice their flashcards, use t
 
 Be encouraging and curious. Help the user build lasting knowledge through engaging conversation.`;
 
-export const loadLearnAgent: AgentLoader = async (): Promise<AgentConfig> => {
+export const loadLearnAgent: AgentLoader = async (params?: AgentParams): Promise<AgentConfig> => {
   let instructions = baseInstructions;
+  const topic = params?.topic;
 
-  // Load previous topics to remind user what they've learned
+  // Load recent flashcards to help user continue from where they left off
   const db = await getDb();
-  const topics = await db.collection("flashcards").distinct("topic");
-  if (topics.length > 0) {
-    const topicsList = topics.join(", ");
-    instructions += `\n\nThe user has previously learned about these topics: ${topicsList}. When greeting them, briefly mention these topics and ask if they'd like to continue exploring any of them or start something new.`;
-    console.log(`📚 Learn agent loaded ${topics.length} previous topics: ${topicsList}`);
+  const query = topic ? { topic } : {};
+  const recentFlashcards = await db
+    .collection("flashcards")
+    .find(query)
+    .sort({ createdAt: -1 })
+    .limit(3)
+    .toArray();
+
+  if (topic) {
+    instructions += `\n\nThe user wants to continue learning about: ${topic}`;
+  }
+
+  if (recentFlashcards.length > 0) {
+    const recentSummary = recentFlashcards
+      .map((fc) => `- "${fc.question}"`)
+      .join("\n");
+    instructions += `\n\nTheir most recent flashcards${topic ? " on this topic" : ""} are:\n${recentSummary}\n\nUse these to help guide the conversation.`;
+    console.log(`📚 Learn agent loaded ${recentFlashcards.length} recent flashcards${topic ? ` for topic: ${topic}` : ""}`);
   }
 
   return {

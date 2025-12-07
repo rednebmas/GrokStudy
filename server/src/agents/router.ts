@@ -2,7 +2,8 @@
  * Agent router - manages agent switching and provides agent configurations
  */
 
-import type { AgentConfig, AgentName, AgentLoader, ToolDefinition } from "./types";
+import type { AgentConfig, AgentName, AgentLoader, AgentParams, ToolDefinition } from "./types";
+import { loadStarterAgent } from "./starter";
 import { loadLearnAgent } from "./learn";
 import { loadStudyAgent } from "./study";
 
@@ -21,24 +22,29 @@ export const agentRouterTool: ToolDefinition = {
         agent: {
           type: "string",
           description: "The agent to switch to",
-          enum: ["learn", "study"],
+          enum: ["starter", "learn", "study"],
         },
         reason: {
           type: "string",
           description: "Brief explanation of why switching agents",
+        },
+        topic: {
+          type: "string",
+          description: "The topic to focus on (only used when switching to learn agent)",
         },
       },
       required: ["agent", "reason"],
     },
   },
   execute: async (args, context) => {
-    const { agent, reason } = args as unknown as { agent: AgentName; reason: string };
-    console.log(`[${context.sessionId}] 🔄 Switching to ${agent} agent: ${reason}`);
-    return { switched: true, agent, reason };
+    const { agent, reason, topic } = args as unknown as { agent: AgentName; reason: string; topic?: string };
+    console.log(`[${context.sessionId}] 🔄 Switching to ${agent} agent: ${reason}${topic ? ` (topic: ${topic})` : ""}`);
+    return { switched: true, agent, reason, topic };
   },
 };
 
 const agentLoaders: Record<AgentName, AgentLoader> = {
+  starter: loadStarterAgent,
   learn: loadLearnAgent,
   study: loadStudyAgent,
 };
@@ -46,9 +52,9 @@ const agentLoaders: Record<AgentName, AgentLoader> = {
 /**
  * Get the configuration for a specific agent (async to allow data loading)
  */
-export async function getAgentConfig(agentName: AgentName): Promise<AgentConfig> {
+export async function getAgentConfig(agentName: AgentName, params?: AgentParams): Promise<AgentConfig> {
   const loader = agentLoaders[agentName];
-  const agent = await loader();
+  const agent = await loader(params);
   return {
     ...agent,
     tools: [...agent.tools, agentRouterTool /*{ type: "web_search" }*/],
@@ -59,12 +65,12 @@ export async function getAgentConfig(agentName: AgentName): Promise<AgentConfig>
  * Get the default agent (Learn mode)
  */
 export async function getDefaultAgent(): Promise<AgentConfig> {
-  return getAgentConfig("learn");
+  return getAgentConfig("starter");
 }
 
 /**
  * Check if an agent name is valid
  */
 export function isValidAgent(name: string): name is AgentName {
-  return name === "learn" || name === "study";
+  return name === "starter" || name === "learn" || name === "study";
 }

@@ -4,7 +4,7 @@
 
 import type { ToolContext } from "../tools";
 
-export type AgentName = "learn" | "study";
+export type AgentName = "starter" | "learn" | "study";
 
 export interface ToolParameter {
   type: string;
@@ -37,6 +37,13 @@ export interface AgentConfig {
 }
 
 /**
+ * Parameters that can be passed when loading an agent
+ */
+export interface AgentParams {
+  topic?: string;
+}
+
+/**
  * Function that loads an agent config, optionally with async data
  */
-export type AgentLoader = () => Promise<AgentConfig>;
+export type AgentLoader = (params?: AgentParams) => Promise<AgentConfig>;

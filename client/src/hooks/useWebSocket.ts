@@ -9,15 +9,20 @@ import type { Message, DebugLogEntry } from "../types/messages";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const XAI_REALTIME_URL = "wss://api.x.ai/v1/realtime";
 
+interface AgentSwitchInfo {
+  agent: string;
+  topic?: string;
+}
+
 interface UseWebSocketReturn {
   isConnected: boolean;
-  connect: (sampleRate: number, agent?: string) => Promise<void>;
+  connect: (sampleRate: number, agent?: string, topic?: string) => Promise<void>;
   disconnect: () => void;
   sendMessage: (message: Message) => void;
   debugLogs: DebugLogEntry[];
   clearLogs: () => void;
   provider: string | null;
-  pendingAgentSwitch: string | null;
+  pendingAgentSwitch: AgentSwitchInfo | null;
   clearPendingAgentSwitch: () => void;
 }
 
@@ -72,7 +77,7 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
   const [isConnected, setIsConnected] = useState(false);
   const [debugLogs, setDebugLogs] = useState<DebugLogEntry[]>([]);
   const [provider, setProvider] = useState<string | null>(null);
-  const [pendingAgentSwitch, setPendingAgentSwitch] = useState<string | null>(null);
+  const [pendingAgentSwitch, setPendingAgentSwitch] = useState<AgentSwitchInfo | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const sessionConfigRef = useRef<{
     voice: string;
@@ -186,13 +191,16 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
   );
 
   const connect = useCallback(
-    async (sampleRate: number, agent?: string) => {
+    async (sampleRate: number, agent?: string, topic?: string) => {
       try {
-        const agentParam = agent ? `?agent=${agent}` : "";
-        console.log(`📝 Getting ephemeral token${agent ? ` for agent: ${agent}` : ""}...`);
+        const params = new URLSearchParams();
+        if (agent) params.set("agent", agent);
+        if (topic) params.set("topic", topic);
+        const queryString = params.toString();
+        console.log(`📝 Getting ephemeral token${agent ? ` for agent: ${agent}` : ""}${topic ? ` (topic: ${topic})` : ""}...`);
 
         // Get ephemeral token from backend
-        const response = await fetch(`${API_BASE_URL}/session${agentParam}`, {
+        const response = await fetch(`${API_BASE_URL}/session${queryString ? `?${queryString}` : ""}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -296,7 +304,6 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
                 // Execute tool on server
                 const result = await executeToolOnServer(toolMessage.name, args, sessionId, agent);
 
-                // Handle agent switching - disconnect and reconnect with new agent
                 if (
                   toolMessage.name === "switch_agent" &&
                   result &&
@@ -306,9 +313,10 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
                   "agent" in result
                 ) {
                   const newAgent = result.agent as string;
-                  console.log(`🔄 [Client] Agent switch requested to: ${newAgent}`);
+                  const topic = "topic" in result ? (result.topic as string | undefined) : undefined;
+                  console.log(`🔄 [Client] Agent switch requested to: ${newAgent}${topic ? ` (topic: ${topic})` : ""}`);
                   ws.close(); // Close immediately to stop receiving messages
-                  setPendingAgentSwitch(newAgent);
+                  setPendingAgentSwitch({ agent: newAgent, topic });
                   return;
                 }
 

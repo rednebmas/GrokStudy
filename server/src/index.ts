@@ -97,13 +97,14 @@ app.get("/health", (req, res) => {
 // Ephemeral token endpoint for direct client connection to XAI API
 app.post("/session", sessionLimiter, async (req, res) => {
   try {
-    // Get agent from query param, default to learn
+    // Get agent and optional topic from query params
     const agentName = req.query.agent as string | undefined;
+    const topic = req.query.topic as string | undefined;
     const agent = await (agentName && isValidAgent(agentName)
-      ? getAgentConfig(agentName)
+      ? getAgentConfig(agentName, { topic })
       : getDefaultAgent());
 
-    console.log(`📝 Creating ephemeral session for agent: ${agent.name}...`);
+    console.log(`📝 Creating ephemeral session for agent: ${agent.name}${topic ? ` (topic: ${topic})` : ""}...`);
 
     const SESSION_REQUEST_URL = "https://api.x.ai/v1/realtime/client_secrets";
     const response = await fetch(SESSION_REQUEST_URL, {

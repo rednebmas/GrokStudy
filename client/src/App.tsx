@@ -172,7 +172,7 @@ function App() {
   sendMessageRef.current = sendMessage;
 
   // Start conversation
-  const handleStart = async (agent?: string) => {
+  const handleStart = async (agent?: string, topic?: string) => {
     try {
       // Clear logs and transcript
       clearLogs();
@@ -189,7 +189,7 @@ function App() {
 
       // Connect WebSocket with the detected sample rate
       console.log(`Using detected sample rate: ${detectedSampleRate}Hz`);
-      await connect(detectedSampleRate, agent);
+      await connect(detectedSampleRate, agent, topic);
     } catch (error) {
       console.error("Failed to start:", error);
       alert(`Failed to start: ${error}`);
@@ -207,11 +207,11 @@ function App() {
   // Handle agent switch - stop and restart with new agent
   useEffect(() => {
     if (pendingAgentSwitch) {
-      const newAgent = pendingAgentSwitch;
+      const { agent, topic } = pendingAgentSwitch;
       clearPendingAgentSwitch();
       handleStop();
       setTimeout(() => {
-        handleStart(newAgent);
+        handleStart(agent, topic);
       }, 1000);
     }
   }, [pendingAgentSwitch]);

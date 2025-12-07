@@ -168,7 +168,8 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
       ws.send(JSON.stringify({ type: "input_audio_buffer.commit" }));
 
       // Use server-provided greeting or default
-      const greetingText = sessionConfigRef.current?.greeting || "Hello! What would you like to learn about today?";
+      const greetingText =
+        sessionConfigRef.current?.greeting || "Hello! What would you like to learn about today?";
 
       // Create greeting message with specific content from server
       const greetingMessage = {
@@ -202,15 +203,20 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
         if (agent) params.set("agent", agent);
         if (topic) params.set("topic", topic);
         const queryString = params.toString();
-        console.log(`📝 Getting ephemeral token${agent ? ` for agent: ${agent}` : ""}${topic ? ` (topic: ${topic})` : ""}...`);
+        console.log(
+          `📝 Getting ephemeral token${agent ? ` for agent: ${agent}` : ""}${topic ? ` (topic: ${topic})` : ""}...`,
+        );
 
         // Get ephemeral token from backend
-        const response = await fetch(`${API_BASE_URL}/session${queryString ? `?${queryString}` : ""}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        const response = await fetch(
+          `${API_BASE_URL}/session${queryString ? `?${queryString}` : ""}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
           },
-        });
+        );
 
         if (!response.ok) {
           throw new Error(`Failed to get session: ${response.statusText}`);
@@ -319,8 +325,11 @@ export function useWebSocket(onMessage: (message: Message) => void): UseWebSocke
                   "agent" in result
                 ) {
                   const newAgent = result.agent as string;
-                  const topic = "topic" in result ? (result.topic as string | undefined) : undefined;
-                  console.log(`🔄 [Client] Agent switch requested to: ${newAgent}${topic ? ` (topic: ${topic})` : ""}`);
+                  const topic =
+                    "topic" in result ? (result.topic as string | undefined) : undefined;
+                  console.log(
+                    `🔄 [Client] Agent switch requested to: ${newAgent}${topic ? ` (topic: ${topic})` : ""}`,
+                  );
                   ws.close(); // Close immediately to stop receiving messages
                   setPendingAgentSwitch({ agent: newAgent, topic });
                   return;

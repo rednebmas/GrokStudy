@@ -26,7 +26,7 @@ app.use((req, res, next) => {
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin);
   }
-  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE",);
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.header("Access-Control-Allow-Credentials", "true");
 
@@ -201,11 +201,7 @@ app.post("/tools/execute", async (req, res) => {
 app.get("/flashcards", async (req, res) => {
   try {
     const db = await getDb();
-    const flashcards = await db
-      .collection("flashcards")
-      .find({})
-      .sort({ createdAt: -1 })
-      .toArray();
+    const flashcards = await db.collection("flashcards").find({}).sort({ createdAt: -1 }).toArray();
 
     res.json({ flashcards });
   } catch (error) {

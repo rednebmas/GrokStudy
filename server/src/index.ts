@@ -12,6 +12,8 @@ import type WebSocket from "ws";
 import { SessionManager } from "./session-manager";
 import { RTCPeerManager } from "./rtc-peer";
 import type { SignalingMessage } from "./types";
+import { getDb } from "./db";
+
 import { getDefaultAgent } from "./agents";
 
 // Helper to get timestamp with milliseconds
@@ -67,6 +69,19 @@ const sessionManager = new SessionManager();
 
 // Store active peer connections
 const peerConnections = new Map<string, RTCPeerManager>();
+
+
+//BELOW INITIALIZES DB CONNECTION HELPER
+
+(async () => {
+  try {
+    await getDb();
+    console.log("MongoDB connected");
+  } catch (err) {
+    console.error("MongoDB connection failed", err);
+  }
+})();
+
 
 // ========================================
 // REST API Endpoints
@@ -170,6 +185,16 @@ app.post("/sessions", (req, res) => {
     created_at: session.created_at,
     sample_rate: session.sample_rate,
   });
+
+  //USE FOLLOWING CODE WHERE NEEDED TO INTERACT WITH DB
+  const db = await getDb();
+  await db.collection("sessions").insertOne({
+    session_id: session.id,
+    created_at: session.created_at,
+    sample_rate: session.sample_rate,
+    status: session.status,
+  });
+
 });
 
 app.get("/sessions", (req, res) => {

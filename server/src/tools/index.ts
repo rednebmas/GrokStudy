@@ -150,10 +150,10 @@ export const validateAnswerTool: ToolDefinition = {
   function: {
     name: "validate_answer",
     description:
-      "Record whether the user's answer to the current flashcard is correct. Call this after the user answers a flashcard question.",
+      "Record whether the user's answer to the current flashcard is correct. Call this after the user answers a flashcard question. IT DOES NOT NEED TO BE AN EXACT match, just around the general idea of the flashcard. IT IS OK to have parts of the flashcard that the user does not mention, that still counts as correct, but make sure to bring up any parts the user left out in their answer.",
     parameters: {
       type: "object",
-      properties: {
+      properties: { 
         isCorrect: {
           type: "boolean",
           description: "Whether the user's answer is correct",

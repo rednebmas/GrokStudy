@@ -12,6 +12,7 @@ export interface Session {
   status: "created" | "active" | "closed";
   sample_rate: number;
   webrtcStats?: WebRTCStats;
+  userId?: string;
 }
 
 // WebRTC connection statistics
@@ -57,3 +58,13 @@ export interface AudioBuffer {
   timestamp: number;
   sampleRate: number;
 }
+
+export interface UserContext {
+  userId: string;
+  name?: string;
+  preferences?: Record<string, unknown>;
+  goals?: string[];
+  lastSessionId?: string;
+  notes?: string;
+}
+

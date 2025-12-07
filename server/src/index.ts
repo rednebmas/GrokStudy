@@ -13,6 +13,8 @@ import { SessionManager } from "./session-manager";
 import { RTCPeerManager } from "./rtc-peer";
 import type { SignalingMessage } from "./types";
 import { getDb } from "./db";
+import { getUserContext } from "./user-repo";
+
 
 import { getDefaultAgent } from "./agents";
 
@@ -161,7 +163,7 @@ app.post("/session", async (req, res) => {
   }
 });
 
-app.post("/sessions", (req, res) => {
+app.post("/sessions", async (req, res) => {
   // Get sample rate from request body
   const requestedSampleRate = req.body.sample_rate || 24000;
 
@@ -179,20 +181,26 @@ app.post("/sessions", (req, res) => {
   }
 
   const session = sessionManager.createSession(sampleRate);
+  const userId = req.body.user_id; // supply from client or from auth
+  const userContext = userId ? await getUserContext(userId) : null;
+  (session as any).userId = userId;
+  (session as any).userContext = userContext;
+
+
+  const contextualInstructions = userContext
+    ? `${defaultAgent.instructions}
+  User: ${userContext.name ?? userContext.userId}
+  Goals: ${(userContext.goals ?? []).join(", ")}
+  Notes: ${userContext.notes ?? ""}`
+    : defaultAgent.instructions;
+
+
   res.json({
     session_id: session.id,
     signaling_url: `/signaling/${session.id}`,
     created_at: session.created_at,
     sample_rate: session.sample_rate,
-  });
-
-  //USE FOLLOWING CODE WHERE NEEDED TO INTERACT WITH DB
-  const db = await getDb();
-  await db.collection("sessions").insertOne({
-    session_id: session.id,
-    created_at: session.created_at,
-    sample_rate: session.sample_rate,
-    status: session.status,
+    user_context: userContext,
   });
 
 });
@@ -274,6 +282,7 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
   console.log(`[${sessionId}] 🎵 Using session with sample rate: ${session.sample_rate}Hz`);
   sessionManager.updateSessionStatus(sessionId, "active");
 
+
   // Create RTCPeerManager with session's sample rate
   const peerManager = new RTCPeerManager({
     sessionId,
@@ -299,6 +308,7 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
     });
 
   // Set up signaling message handler FIRST (before sending offer)
+  const userContext = null;
   // This prevents race condition where answer arrives before we're listening
   ws.on("message", async (data: WebSocket.Data) => {
     try {

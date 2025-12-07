@@ -51,7 +51,7 @@ export function getAgentConfig(agentName: AgentName): AgentConfig {
   const agent = agents[agentName];
   return {
     ...agent,
-    tools: [...agent.tools, agentRouterTool, /*{ type: "web_search" }*/],
+    tools: [...agent.tools, agentRouterTool /*{ type: "web_search" }*/],
   };
 }
 
